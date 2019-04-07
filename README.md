@@ -17,7 +17,14 @@ Primeiramente, comece clonando o repositório
 ```
 git clone https://github.com/LucasSchurer/elm-pong.git
 ```
-Rode o `elm reactor` e então acesse `https://localhost:8000`, navegando até encontrar o local onde o repositório foi baixado.
+Vá até o local onde o repositório foi baixado, executando os seguintes comandos:
+```
+elm install elm/svg
+elm install elm/json
+elm make .\src\Game.elm
+```
+Um arquivo chamado "index.html" será criado na pasta do jogo. Abra-o com seu navegador preferido (por favor seja o chrome) e comece a jogar :)
+
 
 ## Objetivo
 
@@ -27,8 +34,8 @@ Criado como uma atividade complementar da disciplina de Paradigmas de Programaç
 
  - [x] Criar um README para o programa. 
  - [ ] Desenhar o básico das informações visuais do jogo. 
-   - [ ] Jogadores 
-   - [ ] Bola 
+   - [ ] Jogadores
+   - [ ] Bola
    - [ ] Background 
    - [ ] Score 
  - [ ] Implementar a movimentação dos jogadores, podendo com que os dois se movam ao mesmo tempo.
