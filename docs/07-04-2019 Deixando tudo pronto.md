@@ -1,0 +1,52 @@
+# Deixando tudo pronto
+
+Depois de duas horas tentando organizar todos os arquivos dos repositórios - com a exclusão acidental de um deles -, acredito que todas as preparações estão feitas para continuar o jogo. 
+
+Antes, todos os arquivos do projeto estavam dentro de uma pasta em outro repositório, mas para facilitar o download e execução do programa, achei mais sensato transferir tudo para um outro lugar.
+
+No final das contas, demorei um tempo gigante para fazer tudo, já que minha inexperiência em usar o github finalmente decidiu atacar. Mesmo assim, acho que foi melhor ter feito isso agora do que deixar para depois, quando já estivesse com mais coisas prontas. Dessa forma, posso continuar o trabalho que estava apenas começando de uma maneira correta.
+
+## Movimentação dos jogadores
+
+Atualmente, a movimentação dos jogadores é feita da seguinte forma:
+  - O programa busca entradas do teclado.
+  - As entradas válidas (W/S/DownArrow/UpArrow/Space) são registradas como uma ação do jogador.
+  - O jogo é atualizado com base nas ações do jogador.
+
+Em um exemplo onde o jogador aperte a tecla W, o evento da tecla pressionada é enviada para a função de atualização. No entanto, ele utiliza a mesma estrutura para receber as ações dos dois jogadores.
+
+Quando apertasse o W e segurasse (para andar até a parte mais alta da tela), caso o outro jogador apertasse algumas das duas setas, o movimento do primeiro pararia.
+
+Acredito existir duas formas de resolver esse problema.
+  - Diferenciar os eventos das teclas apertadas em casos onde faz parte do controle do jogador A e em casos onde fazem parte do jogador B.
+  - Criar uma movimentação constante para os dois jogadores, fazendo com que seja impossível de "segurar" a tecla para andar sem parar. Dessa forma, quando apertassem qualquer uma das teclas, a plataforma moveria naquela direção sem parar, até ganhar outra direção.
+  
+Além disso, um pequeno problema na implementação da colisão das plataformas com as paredes. Atualmente, estou fazendo uma verificação apenas:
+
+```
+validMovement : GameSettings -> Player -> Bool
+validMovement game player =
+    if ( player.y - player.speed < 0 ) || ( player.y + player.speed + player.height > game.height ) then False else True 
+```
+
+Dessa forma, quando o jogador bate em uma beirada, uma das condições se torna verdadeira, invalidando a movimentação. Pra solucionar o problema, bastaria adicionar a direção em que o jogador está se movimentando.
+
+```
+validMovement : GameSettings -> Player -> Int -> Bool
+validMovement game player dir =
+    case dir of
+        1 ->
+            if ( ( player.y + player.speed + player.height ) > game.height ) then False else True
+        
+        2 ->
+            if ( player.y - player.speed < 0 ) then False else True
+        
+        _ ->
+            False
+```
+
+Gostaria de alguma solução onde não fosse necessário incluir a direção de onde o jogador está se movimentando, então no futuro será bom voltar neste tópico.
+
+Pelo menos agora não existem mais erros de colisão.
+
+
