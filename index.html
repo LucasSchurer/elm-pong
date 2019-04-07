@@ -5607,9 +5607,16 @@ var author$project$Main$updatePlayer = F2(
 			player,
 			{y: player.y + (dir * player.speed)});
 	});
-var author$project$Main$validMovement = F2(
-	function (game, player) {
-		return (((player.y - player.speed) < 0) || (_Utils_cmp((player.y + player.speed) + player.height, game.height) > 0)) ? false : true;
+var author$project$Main$validMovement = F3(
+	function (game, player, dir) {
+		switch (dir) {
+			case 1:
+				return (_Utils_cmp((player.y + player.speed) + player.height, game.height) > 0) ? false : true;
+			case 2:
+				return ((player.y - player.speed) < 0) ? false : true;
+			default:
+				return false;
+		}
 	});
 var elm$core$Basics$negate = function (n) {
 	return -n;
@@ -5620,7 +5627,7 @@ var author$project$Main$update = F2(
 			var key = msg.a;
 			switch (key.$) {
 				case 'Up':
-					return A2(author$project$Main$validMovement, model.game, model.player1) ? _Utils_Tuple2(
+					return A3(author$project$Main$validMovement, model.game, model.player1, 2) ? _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
@@ -5628,7 +5635,7 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				case 'Down':
-					return A2(author$project$Main$validMovement, model.game, model.player1) ? _Utils_Tuple2(
+					return A3(author$project$Main$validMovement, model.game, model.player1, 1) ? _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
@@ -5636,7 +5643,7 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				case 'W':
-					return A2(author$project$Main$validMovement, model.game, model.player2) ? _Utils_Tuple2(
+					return A3(author$project$Main$validMovement, model.game, model.player2, 2) ? _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{
@@ -5644,7 +5651,7 @@ var author$project$Main$update = F2(
 							}),
 						elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				case 'S':
-					return A2(author$project$Main$validMovement, model.game, model.player2) ? _Utils_Tuple2(
+					return A3(author$project$Main$validMovement, model.game, model.player2, 1) ? _Utils_Tuple2(
 						_Utils_update(
 							model,
 							{

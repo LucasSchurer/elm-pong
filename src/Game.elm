@@ -124,7 +124,7 @@ update msg model =
         KeyPressed key ->
             case key of
                 Up -> 
-                    if validMovement model.game model.player1 then
+                    if validMovement model.game model.player1 2 then
                         ( { model | player1 = updatePlayer model.player1 -1 }
                         , Cmd.none 
                         )
@@ -135,7 +135,7 @@ update msg model =
                         )
                 
                 Down ->
-                    if validMovement model.game model.player1 then
+                    if validMovement model.game model.player1 1 then
                         ( { model | player1 = updatePlayer model.player1 1 }
                         , Cmd.none 
                         )
@@ -146,7 +146,7 @@ update msg model =
                         )
                 
                 W ->
-                    if validMovement model.game model.player2 then
+                    if validMovement model.game model.player2 2 then
                         ( { model | player2 = updatePlayer model.player2 -1 }
                         , Cmd.none 
                         )
@@ -157,7 +157,7 @@ update msg model =
                         )
                 
                 S ->
-                    if validMovement model.game model.player2 then
+                    if validMovement model.game model.player2 1 then
                         ( { model | player2 = updatePlayer model.player2 1 }
                         , Cmd.none 
                         )
@@ -176,9 +176,17 @@ update msg model =
             ( model, Cmd.none )
     
 
-validMovement : GameSettings -> Player -> Bool
-validMovement game player =
-    if ( player.y - player.speed < 0 ) || ( player.y + player.speed + player.height > game.height ) then False else True 
+validMovement : GameSettings -> Player -> Int -> Bool
+validMovement game player dir =
+    case dir of
+        1 ->
+            if ( ( player.y + player.speed + player.height ) > game.height ) then False else True
+        
+        2 ->
+            if ( player.y - player.speed < 0 ) then False else True
+        
+        _ ->
+            False
 
 updatePlayer : Player -> Int -> Player
 updatePlayer player dir = 
