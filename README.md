@@ -43,7 +43,9 @@ Criado como uma atividade complementar da disciplina de Paradigmas de Programaç
    - [ ] Instruções na tela.
    
  
+ ## Progresso
  
+ Você pode acompanhar o que está sendo feito atualmente no projeto no meu [site](https://lucasschurer.github.io/elm-pong/index).
 
 
 
