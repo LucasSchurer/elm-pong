@@ -5864,8 +5864,11 @@ var author$project$Main$subscriptions = function (_n0) {
 		_List_fromArray(
 			[
 				elm$browser$Browser$Events$onKeyDown(author$project$Main$keyDecoder),
-				A2(elm$time$Time$every, 1.0e-2, author$project$Main$Tick)
+				A2(elm$time$Time$every, 5, author$project$Main$Tick)
 			]));
+};
+var author$project$Main$updateBall = function (ball) {
+	return A3(author$project$Main$Ball, ball.x + 2, ball.y, ball.r);
 };
 var author$project$Main$updatePlayer = F2(
 	function (player, dir) {
@@ -5935,7 +5938,10 @@ var author$project$Main$update = F2(
 				return _Utils_Tuple2(
 					_Utils_update(
 						model,
-						{time: model.time + 1}),
+						{
+							ball: author$project$Main$updateBall(model.ball),
+							time: model.time + 1
+						}),
 					elm$core$Platform$Cmd$none);
 			default:
 				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);

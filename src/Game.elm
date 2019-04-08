@@ -179,11 +179,9 @@ update msg model =
                 
                 None ->
                     ( model, Cmd.none ) 
-   
-        
-        
+      
         Tick time ->
-            ( { model | time = model.time + 1 }
+            ( { model | time = model.time + 1, ball = updateBall model.ball }
             , Cmd.none ) 
 
         _ ->
@@ -206,6 +204,10 @@ updatePlayer : Player -> Int -> Player
 updatePlayer player dir = 
     { player | y = player.y + ( dir * player.speed ) }
 
+updateBall : Ball -> Ball
+updateBall ball =
+    Ball ( ball.x + 2 ) ball.y ball.r
+
 -- Subscriptions
 
 keyDecoder : Json.Decode.Decoder Msg
@@ -216,28 +218,28 @@ toDirection : String -> Msg
 toDirection string = 
     case string of
         "ArrowUp" -> 
-            KeyPressed Up
+            KeyPressed Up 
         
         "ArrowDown" ->
-            KeyPressed Down
+            KeyPressed Down 
         
         "w" ->
-            KeyPressed W
+            KeyPressed W 
 
         "s" ->
-            KeyPressed S
+            KeyPressed S 
 
         " " ->
-            KeyPressed Space
+            KeyPressed Space 
             
         _ -> 
-            KeyPressed None
+            KeyPressed None 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch 
         [ Browser.Events.onKeyDown keyDecoder
-        , Time.every 0.01 Tick
+        , Time.every 5 Tick
         ]
 
 -- View
