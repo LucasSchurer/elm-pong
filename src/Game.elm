@@ -3,6 +3,7 @@ import Browser.Events
 import Json.Decode
 import Svg
 import Svg.Attributes
+import Time 
 
 -- Main
 main = 
@@ -54,6 +55,7 @@ type alias Model =
     , game : GameSettings
     , window : WindowSettings
     , ball : Ball
+    , time : Time
     }
 
 init : () -> ( Model, Cmd Msg )
@@ -80,12 +82,13 @@ init _ =
             ( width // 2  )
             ( height // 4 )
         )
-    , Cmd.none 
+        ( 0 )
+    , Cmd.none
     )
 
 initPlayer : Int -> Int -> Int -> Player
 initPlayer x y width = 
-    Player x y ( width // 64 ) ( width // 32 ) 10 0
+    Player x y ( width // 86 ) ( width // 28 ) ( width // 94 ) 0
 
 initBall : Int -> Int -> Ball
 initBall x y =
@@ -106,6 +109,9 @@ initWindowSettings width height =
 
 -- Update
 
+type alias Time =
+    Float
+
 type Key 
     = Up
     | Down
@@ -117,6 +123,7 @@ type Key
 type Msg 
     = KeyPressed Key
     | GameState State
+    | Tick Time.Posix
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model = 
@@ -168,12 +175,19 @@ update msg model =
                         )
                 
                 Space ->
-                    ( model, Cmd.none )
+                    ( model, Cmd.none ) 
                 
                 None ->
-                    ( model, Cmd.none )        
+                    ( model, Cmd.none ) 
+   
+        
+        
+        Tick time ->
+            ( { model | time = model.time + 1 }
+            , Cmd.none ) 
+
         _ ->
-            ( model, Cmd.none )
+            ( model, Cmd.none )     
     
 
 validMovement : GameSettings -> Player -> Int -> Bool
@@ -213,7 +227,7 @@ toDirection string =
         "s" ->
             KeyPressed S
 
-        "" ->
+        " " ->
             KeyPressed Space
             
         _ -> 
@@ -223,7 +237,7 @@ subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch 
         [ Browser.Events.onKeyDown keyDecoder
-        , Browser.Events.onKeyDown keyDecoder
+        , Time.every 0.01 Tick
         ]
 
 -- View
@@ -246,6 +260,7 @@ view model =
         , drawPlayer model.player1
         , drawPlayer model.player2
         , drawBall model.ball
+        , Svg.text_ [ Svg.Attributes.fontSize "40", Svg.Attributes.x "800", Svg.Attributes.y "600" ] [ Svg.text ( String.fromFloat model.time ) ] 
         ]    
         
 drawBackground : GameSettings -> Svg.Svg Msg

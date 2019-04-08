@@ -21,6 +21,7 @@ Vá até o local onde o repositório foi baixado, executando os seguintes comand
 ```
 elm install elm/svg
 elm install elm/json
+elm install elm/time
 elm make .\src\Game.elm
 ```
 Um arquivo chamado "index.html" será criado na pasta do jogo. Abra-o com seu navegador preferido (por favor seja o chrome) e comece a jogar :)
