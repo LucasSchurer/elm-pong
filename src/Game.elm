@@ -41,6 +41,7 @@ type alias Player =
     , height : Int
     , speed : Int
     , score : Int
+    , direction : Int
     }
 
 type alias Ball =
@@ -68,12 +69,12 @@ init _ =
     ( Model 
         ( initPlayer 
             ( width // 2 - width // 4 + width // 64 ) 
-            ( height // 4 - width // 64 ) 
+            ( height // 4 - width // 60 ) 
             width
         ) 
         ( initPlayer 
             ( width // 2 + width // 4 - 2 * ( width // 64 ) ) 
-            ( height // 4 - width // 64 )
+            ( height // 4 - width // 60 )
             width 
         )
         ( initGameSettings width height )
@@ -88,7 +89,7 @@ init _ =
 
 initPlayer : Int -> Int -> Int -> Player
 initPlayer x y width = 
-    Player x y ( width // 86 ) ( width // 28 ) ( width // 94 ) 0
+    Player x y ( width // 86 ) ( width // 28 ) ( width // 94 ) 0 0
 
 initBall : Int -> Int -> Ball
 initBall x y =
@@ -115,139 +116,167 @@ type alias Time =
 type Key 
     = Up
     | Down
-    | W
-    | S
+    | Stop
     | Space
     | None
 
 type Msg 
-    = Player1 Key
+    = Tick Time.Posix
+    | Player1 Key
     | Player2 Key
     | System Key
-    | Tick Time.Posix
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model = 
-    case msg of 
-        Player1 key ->
-            case key of
-                Up -> 
-                    if validMovement model.game model.player1 2 then
-                        ( { model | player1 = updatePlayer model.player1 -1 }
-                        , Cmd.none 
-                        )
+    case msg of
+        Player1 direction ->
+            case direction of
+                Up ->
+                    ( { model | player1 = updateDirection model.player1 -1 }
+                    , Cmd.none 
+                    )
 
-                    else 
-                        ( model
-                        , Cmd.none 
-                        )
-                
                 Down ->
-                    if validMovement model.game model.player1 1 then
-                        ( { model | player1 = updatePlayer model.player1 1 }
-                        , Cmd.none 
-                        )
+                    ( { model | player1 = updateDirection model.player1 1 }
+                    , Cmd.none 
+                    )
 
-                    else 
-                        ( model
-                        , Cmd.none 
-                        )
-                
+                Stop ->
+                    ( { model | player1 = updateDirection model.player1 0 }
+                    , Cmd.none 
+                    )
+
                 _ ->
-                    ( model, Cmd.none )
+                    ( model
+                    , Cmd.none 
+                    )
 
-        Player2 key ->
-            case key of
-                W ->
-                    if validMovement model.game model.player2 2 then
-                        ( { model | player2 = updatePlayer model.player2 -1 }
-                        , Cmd.none 
-                        )
+        Player2 direction ->
+            case direction of
+                Up ->
+                    ( { model | player2 = updateDirection model.player2 -1 }
+                    , Cmd.none 
+                    )
 
-                    else 
-                        ( model
-                        , Cmd.none 
-                        )
-                
-                S ->
-                    if validMovement model.game model.player2 1 then
-                        ( { model | player2 = updatePlayer model.player2 1 }
-                        , Cmd.none 
-                        )
+                Down ->
+                    ( { model | player2 = updateDirection model.player2 1 }
+                    , Cmd.none 
+                    )
 
-                    else 
-                        ( model
-                        , Cmd.none 
-                        )
-                
+                Stop ->
+                    ( { model | player2 = updateDirection model.player2 0 }
+                    , Cmd.none 
+                    )
+
                 _ ->
-                    ( model, Cmd.none )
+                    ( model
+                    , Cmd.none 
+                    )
 
-        System key ->
-            case key of
-                Space ->
-                    ( model, Cmd.none ) 
-                
-                _ ->
-                    ( model, Cmd.none ) 
-      
         Tick time ->
-            ( { model | time = model.time + 1, ball = updateBall model.ball }
-            , Cmd.none ) 
+            ( updateGame model
+            , Cmd.none 
+            ) 
+
+        _ ->
+            ( model, Cmd.none )
     
 
-validMovement : GameSettings -> Player -> Int -> Bool
-validMovement game player dir =
-    case dir of
-        1 ->
-            if ( ( player.y + player.speed + player.height ) > game.height ) then False else True
-        
-        2 ->
-            if ( player.y - player.speed < 0 ) then False else True
-        
-        _ ->
-            False
+validMovement : GameSettings -> Player -> Bool
+validMovement game player =
+    let 
+        dir = String.fromInt ( player.direction )
 
-updatePlayer : Player -> Int -> Player
-updatePlayer player dir = 
-    { player | y = player.y + ( dir * player.speed ) }
+    in
+        case dir of
+            "1" ->
+                if ( ( player.y + player.speed + player.height ) > game.height ) then False else True
+            
+            "-1" ->
+                if ( player.y - player.speed < 0 ) then False else True
+            
+            _ ->
+                False
+
+updatePlayer : GameSettings -> Player -> Player
+updatePlayer game player = 
+    if validMovement game player then 
+        { player | y = player.y + ( player.direction * player.speed ) }
+    
+    else 
+        player
+
+updateDirection : Player -> Int -> Player
+updateDirection player dir =
+    { player | direction = dir }
 
 updateBall : Ball -> Ball
 updateBall ball =
     Ball ( ball.x + 2 ) ball.y ball.r
 
+updateGame : Model -> Model
+updateGame model =
+    Model 
+    ( updatePlayer model.game model.player1 )
+    ( updatePlayer model.game model.player2 )
+    ( model.game )
+    ( model.window )
+    ( updateBall model.ball )
+    ( model.time + 1 )
+
 -- Subscriptions
 
 keyDecoder : Json.Decode.Decoder Msg
 keyDecoder = 
-    Json.Decode.map toDirection (Json.Decode.field "key" Json.Decode.string)
+    Json.Decode.map toDirection ( Json.Decode.field "key" Json.Decode.string )
 
 toDirection : String -> Msg
-toDirection string = 
+toDirection string =
     case string of
-        "ArrowUp" -> 
+        "ArrowUp" ->
             Player1 Up
-        
+
         "ArrowDown" ->
-            Player1 Down 
-        
+            Player1 Down
+
         "w" ->
-            Player2 W 
+            Player2 Up
 
         "s" ->
-            Player2 S 
+            Player2 Down
 
-        " " ->
-            System Space 
-            
-        _ -> 
-            System None 
+        _ ->
+            System None
+
+keyDecoder_ : Json.Decode.Decoder Msg
+keyDecoder_ = 
+    Json.Decode.map toDirection_ ( Json.Decode.field "key" Json.Decode.string )
+
+toDirection_ : String -> Msg
+toDirection_ string =
+    case string of
+        "ArrowUp" ->
+            Player1 Stop
+
+        "ArrowDown" ->
+            Player1 Stop
+
+        "w" ->
+            Player2 Stop
+
+        "s" ->
+            Player2 Stop
+
+        _ ->
+            System None
+
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch 
         [ Browser.Events.onKeyDown keyDecoder
-        , Time.every 1000 Tick
+        , Browser.Events.onKeyUp keyDecoder_
+        , Time.every ( 1000 / 60 ) Tick
         ]
 
 -- View
