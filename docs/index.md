@@ -6,4 +6,6 @@ Melhorando movimentação dos jogadores.
 
 [Deixando tudo pronto](https://lucasschurer.github.io/elm-pong/07-04-2019-1)
 
+[Movimentação e derrotas](https://lucasschurer.github.io/elm-pong/08-04-2019-1)
+
 #### Você pode jogar clicando [aqui](https://lucasschurer.github.io/elm-pong/game)
