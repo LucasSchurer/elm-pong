@@ -121,14 +121,15 @@ type Key
     | None
 
 type Msg 
-    = KeyPressed Key
-    | GameState State
+    = Player1 Key
+    | Player2 Key
+    | System Key
     | Tick Time.Posix
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model = 
     case msg of 
-        KeyPressed key ->
+        Player1 key ->
             case key of
                 Up -> 
                     if validMovement model.game model.player1 2 then
@@ -152,6 +153,11 @@ update msg model =
                         , Cmd.none 
                         )
                 
+                _ ->
+                    ( model, Cmd.none )
+
+        Player2 key ->
+            case key of
                 W ->
                     if validMovement model.game model.player2 2 then
                         ( { model | player2 = updatePlayer model.player2 -1 }
@@ -174,18 +180,20 @@ update msg model =
                         , Cmd.none 
                         )
                 
+                _ ->
+                    ( model, Cmd.none )
+
+        System key ->
+            case key of
                 Space ->
                     ( model, Cmd.none ) 
                 
-                None ->
+                _ ->
                     ( model, Cmd.none ) 
       
         Tick time ->
             ( { model | time = model.time + 1, ball = updateBall model.ball }
             , Cmd.none ) 
-
-        _ ->
-            ( model, Cmd.none )     
     
 
 validMovement : GameSettings -> Player -> Int -> Bool
@@ -218,28 +226,28 @@ toDirection : String -> Msg
 toDirection string = 
     case string of
         "ArrowUp" -> 
-            KeyPressed Up 
+            Player1 Up
         
         "ArrowDown" ->
-            KeyPressed Down 
+            Player1 Down 
         
         "w" ->
-            KeyPressed W 
+            Player2 W 
 
         "s" ->
-            KeyPressed S 
+            Player2 S 
 
         " " ->
-            KeyPressed Space 
+            System Space 
             
         _ -> 
-            KeyPressed None 
+            System None 
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.batch 
         [ Browser.Events.onKeyDown keyDecoder
-        , Time.every 5 Tick
+        , Time.every 1000 Tick
         ]
 
 -- View
