@@ -1,6 +1,6 @@
 ## O que está sendo feito no momento
 
-Melhorando movimentação dos jogadores.
+Fazendo com que a bolinha possa se mover e ricochetear nos jogadores.
 
 ### Ultimas atualizações
 
