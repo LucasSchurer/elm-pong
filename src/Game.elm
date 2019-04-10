@@ -234,7 +234,7 @@ updateDirection player dir =
 updateBall : Ball -> Player -> Player -> Ball
 updateBall ball player1 player2 =
     if checkCollisionBallPlayer ball player1 || checkCollisionBallPlayer ball player2 then
-        Ball ( ball.x + ball.speedx ) ( ball.y + ball.speedy ) ball.r ( negate ball.speedx ) ball.speedy
+        Ball ( ball.x + ball.speedx ) ( ball.y + ball.speedy ) ball.r ( negate ( ball.speedx + ball.speedx / 6 ) ) ball.speedy
 
     else
         Ball ( ball.x + ball.speedx ) ( ball.y + ball.speedy ) ball.r ball.speedx ball.speedy

@@ -5919,7 +5919,7 @@ var elm$core$Basics$negate = function (n) {
 };
 var author$project$Main$updateBall = F3(
 	function (ball, player1, player2) {
-		return (A2(author$project$Main$checkCollisionBallPlayer, ball, player1) || A2(author$project$Main$checkCollisionBallPlayer, ball, player2)) ? A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -ball.speedx, ball.speedy) : A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
+		return (A2(author$project$Main$checkCollisionBallPlayer, ball, player1) || A2(author$project$Main$checkCollisionBallPlayer, ball, player2)) ? A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -(ball.speedx + (ball.speedx / 5)), ball.speedy) : A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
 	});
 var author$project$Main$validMovement = F2(
 	function (game, player) {
