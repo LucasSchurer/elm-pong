@@ -21,92 +21,113 @@ type State
     | Pause
 
 type alias WindowSettings =
-    { width : Int
-    , height : Int
+    { width : Float
+    , height : Float
+    , scale : Float    
     , focus : Bool
     }
 
 type alias GameSettings =
-    { x : Int
-    , y : Int
-    , width : Int
-    , height : Int
+    { x1 : Float
+    , y1 : Float
+    , x2 : Float
+    , y2 : Float
     , state : State
     }
 
 type alias Player =    
-    { x : Int
-    , y : Int
-    , width : Int
-    , height : Int
-    , speed : Int
+    { x : Float
+    , y : Float
+    , width : Float
+    , height : Float
+    , speed : Float
     , score : Int
     , direction : Int
     }
 
 type alias Ball =
-    { x : Int
-    , y : Int
-    , r : Int
+    { x : Float
+    , y : Float
+    , r : Float
+    , speedx : Float
+    , speedy : Float
     }
 
 type alias Model = 
     { player1 : Player
     , player2 : Player
+    , ball : Ball
     , game : GameSettings
     , window : WindowSettings
-    , ball : Ball
     , time : Time
     }
 
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        width = 1920
-        height = 1080
+        windowSettings = initWindowSettings 1920 1080
+        gameSettings = initGameSettings windowSettings.width windowSettings.height windowSettings.scale
+
+        x1 = gameSettings.x1
+        y1 = gameSettings.y1
+        x2 = gameSettings.x2
+        y2 = gameSettings.y2
+
+        gameWidth = x2 - x1
+        gameHeight = y2 - y1
+
+        playerWidth = 15 * windowSettings.scale
+        playerHeight = 80 * windowSettings.scale
+        ballRadius = 10 * windowSettings.scale
+
+        player1 = 
+            initPlayer
+                ( x1 + playerWidth*2)
+                ( gameHeight / 2 - playerHeight / 2 )
+                playerWidth
+                playerHeight
+                gameWidth
+
+        player2 = 
+            initPlayer
+                ( x2 - playerWidth*4 )
+                ( gameHeight / 2 - playerHeight / 2 )
+                playerWidth
+                playerHeight
+                gameWidth
+
+        ball =
+            initBall
+                ( windowSettings.width / 2 )
+                ( gameHeight / 2 )
+                ballRadius
+                gameWidth
 
     in
-    ( Model 
-        ( initPlayer 
-            ( width // 2 - width // 4 + width // 64 ) 
-            ( height // 4 - width // 60 ) 
-            width
-        ) 
-        ( initPlayer 
-            ( width // 2 + width // 4 - 2 * ( width // 64 ) ) 
-            ( height // 4 - width // 60 )
-            width 
+        ( Model player1 player2 ball gameSettings windowSettings 0
+        , Cmd.none
         )
-        ( initGameSettings width height )
-        ( initWindowSettings width height )
-        ( initBall 
-            ( width // 2  )
-            ( height // 4 )
-        )
-        ( 0 )
-    , Cmd.none
-    )
 
-initPlayer : Int -> Int -> Int -> Player
-initPlayer x y width = 
-    Player x y ( width // 86 ) ( width // 28 ) ( width // 94 ) 0 0
+initPlayer : Float -> Float -> Float -> Float -> Float -> Player
+initPlayer x y playerWidth playerHeight gameHeight = 
+    Player x y playerWidth playerHeight ( gameHeight / ( playerHeight * 2 ) ) 0 0
 
-initBall : Int -> Int -> Ball
-initBall x y =
-    Ball x y ( x * 2 // 128)
+initBall : Float -> Float -> Float -> Float -> Ball
+initBall x y ballRadius gameWidth =
+    Ball x y ballRadius ( gameWidth / ( ballRadius * 30 ) ) 0
 
-initGameSettings : Int -> Int -> GameSettings
-initGameSettings width height =
+initGameSettings : Float -> Float -> Float -> GameSettings
+initGameSettings width height scale =
     GameSettings 
-        ( width // 2 - width // 4 ) 
-        0 
-        ( width // 2 ) 
-        ( height // 2 ) 
+        ( width / 2 - width / 4 )
+        0
+        ( width / 2 + width / 4 )
+        ( height / 2 )
         Play
 
-initWindowSettings : Int -> Int -> WindowSettings
+initWindowSettings : Float -> Float -> WindowSettings
 initWindowSettings width height =
-    WindowSettings width height True
+    WindowSettings width height ( ( width + height ) / ( 1920 + 1080 ) ) True
 
 -- Update
 
@@ -190,10 +211,10 @@ validMovement game player =
     in
         case dir of
             "1" ->
-                if ( ( player.y + player.speed + player.height ) > game.height ) then False else True
+                if ( ( player.y + player.speed + player.height ) > game.y2 ) then False else True
             
             "-1" ->
-                if ( player.y - player.speed < 0 ) then False else True
+                if ( player.y - player.speed < game.y1 ) then False else True
             
             _ ->
                 False
@@ -201,7 +222,7 @@ validMovement game player =
 updatePlayer : GameSettings -> Player -> Player
 updatePlayer game player = 
     if validMovement game player then 
-        { player | y = player.y + ( player.direction * player.speed ) }
+        { player | y = player.y + ( toFloat ( player.direction ) * player.speed ) }
     
     else 
         player
@@ -210,19 +231,40 @@ updateDirection : Player -> Int -> Player
 updateDirection player dir =
     { player | direction = dir }
 
-updateBall : Ball -> Ball
-updateBall ball =
-    Ball ( ball.x + 2 ) ball.y ball.r
+updateBall : Ball -> Player -> Player -> Ball
+updateBall ball player1 player2 =
+    if checkCollisionBallPlayer ball player1 || checkCollisionBallPlayer ball player2 then
+        Ball ( ball.x + ball.speedx ) ( ball.y + ball.speedy ) ball.r ( negate ball.speedx ) ball.speedy
 
+    else
+        Ball ( ball.x + ball.speedx ) ( ball.y + ball.speedy ) ball.r ball.speedx ball.speedy
+
+    
 updateGame : Model -> Model
 updateGame model =
     Model 
     ( updatePlayer model.game model.player1 )
     ( updatePlayer model.game model.player2 )
+    ( updateBall model.ball model.player1 model.player2 )    
     ( model.game )
     ( model.window )
-    ( updateBall model.ball )
     ( model.time + 1 )
+
+checkCollisionBallPlayer : Ball -> Player -> Bool
+checkCollisionBallPlayer ball player = 
+    let 
+        r = ball.r
+        cx = ball.x
+        cy = ball.y
+        sx = ball.speedx
+        sy = ball.speedy
+        x1 = player.x
+        y1 = player.y
+        x2 = player.x + player.width
+        y2 = player.y + player.height
+
+    in
+        if ( ( ( cx + sx + r ) >= x1 ) && ( ( cx + sx + r ) <= x2 ) ) || ( ( ( cx + sx - r ) >= x1 ) && ( cx + sx - r ) <= x2 ) then True else False
 
 -- Subscriptions
 
@@ -284,16 +326,8 @@ subscriptions _ =
 view : Model -> Svg.Svg Msg
 view model = 
     Svg.svg 
-        [ Svg.Attributes.width ( String.fromInt ( model.window.width - model.window.width // 10) )
-        , Svg.Attributes.height ( String.fromInt ( model.window.height - model.window.height // 7 ) )
-        , Svg.Attributes.viewBox (
-            String.join " " 
-                [ "0"
-                , "0"
-                , ( String.fromInt ( model.window.width - model.window.width // 10 ) )
-                , ( String.fromInt ( model.window.height - model.window.height // 7 ) )
-                ]
-        )
+        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
+        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
         ]
         [ drawBackground model.game
         , drawPlayer model.player1
@@ -305,31 +339,31 @@ view model =
 drawBackground : GameSettings -> Svg.Svg Msg
 drawBackground settings = 
     Svg.rect
-        [ Svg.Attributes.x ( String.fromInt settings.x ) 
-        , Svg.Attributes.y ( String.fromInt settings.y )
+        [ Svg.Attributes.x ( String.fromFloat settings.x1 ) 
+        , Svg.Attributes.y ( String.fromFloat settings.y1 )
         , Svg.Attributes.rx "10"
         , Svg.Attributes.ry "10"
-        , Svg.Attributes.width ( String.fromInt settings.width )
-        , Svg.Attributes.height ( String.fromInt settings.height )
+        , Svg.Attributes.width ( String.fromFloat ( settings.x2 - settings.x1 ) )
+        , Svg.Attributes.height ( String.fromFloat ( settings.y2 - settings.y1 ) )
         ] []
 
 drawPlayer : Player -> Svg.Svg Msg
 drawPlayer player =
     Svg.rect
-        [ Svg.Attributes.x ( String.fromInt player.x ) 
-        , Svg.Attributes.y ( String.fromInt player.y )
+        [ Svg.Attributes.x ( String.fromFloat player.x ) 
+        , Svg.Attributes.y ( String.fromFloat player.y )
         , Svg.Attributes.rx "10"
         , Svg.Attributes.ry "10"
-        , Svg.Attributes.width ( String.fromInt player.width )
-        , Svg.Attributes.height ( String.fromInt player.height )
+        , Svg.Attributes.width ( String.fromFloat player.width )
+        , Svg.Attributes.height ( String.fromFloat player.height )
         , Svg.Attributes.fill "white"
         ] []
 
 drawBall : Ball -> Svg.Svg Msg
 drawBall ball = 
     Svg.circle
-        [ Svg.Attributes.cx ( String.fromInt ball.x )
-        , Svg.Attributes.cy ( String.fromInt ball.y )
-        , Svg.Attributes.r ( String.fromInt ball.r )
+        [ Svg.Attributes.cx ( String.fromFloat ball.x )
+        , Svg.Attributes.cy ( String.fromFloat ball.y )
+        , Svg.Attributes.r ( String.fromFloat ball.r )
         , Svg.Attributes.fill "white"
         ] []
