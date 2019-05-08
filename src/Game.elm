@@ -264,12 +264,18 @@ updateBall model =
                 2 ->
                     { model | score = addPointPlayer 1 model.score, ball = resetBall model.ball model.game model.window }
                 
+                3 ->
+                    { model | ball = changeBallDirectionSides ball }
+                
+                4 ->
+                    { model | ball = changeBallDirectionSides ball }
+                
                 _ -> 
                     if checkCollisionBallPlayer ball player1 then
-                        { model | ball = changeBallDirection model.ball }
+                        { model | ball = changeBallDirection model.ball model.player1 }
 
                     else if checkCollisionBallPlayer ball player2 then
-                        { model | ball = changeBallDirection model.ball }
+                        { model | ball = changeBallDirection model.ball model.player2 }
                         
                     else
                         { model | ball = moveBall ball }
@@ -324,7 +330,11 @@ checkCollisionBallSides ball game =
         1
     else if ( ( ball.x + ball.r >= game.x2 ) ) then 
         2 
-    else 
+    else if ( ( ball.y + ball.r + ball.speedy ) > game.y2 )  then
+        3
+    else if ( ( ball.y - ball.r + ball.speedy ) < game.y1 ) then
+        4
+    else
         0
 
 addPointPlayer : Int -> Score -> Score
@@ -339,14 +349,24 @@ addPointPlayer player score =
         _ ->
             score
 
-changeBallDirection : Ball -> Ball
-changeBallDirection ball =
-    Ball 
-        ( ball.x + ball.speedx )
-        ( ball.y + ball.speedy )
-        ball.r
-        ( negate ( ball.speedx ) )
-        ball.speedy
+changeBallDirection : Ball -> Player -> Ball
+changeBallDirection ball player =
+    let
+        middlePaddle = ( player.y + player.height ) / 2
+        distanceMiddleBall = abs ( middlePaddle - ball.x )
+        speedy = distanceMiddleBall / 20
+
+    in    
+        Ball 
+            ( ball.x + ball.speedx )
+            ( ball.y + ball.speedy )
+            ball.r
+            ( negate ( ball.speedx ) )
+            speedy
+
+changeBallDirectionSides : Ball -> Ball
+changeBallDirectionSides ball =
+    moveBall { ball | speedy = negate ball.speedy }
 
 moveBall : Ball -> Ball
 moveBall ball =
@@ -362,7 +382,7 @@ resetBall ball game window =
     let
         gameHeight = game.y2 - game.y1
     in
-    { ball | x = window.width / 2, y = gameHeight / 2 }
+    { ball | x = window.width / 2, y = gameHeight / 2, speedx = negate ball.speedx, speedy = 0 }
     
 
 -- Subscriptions

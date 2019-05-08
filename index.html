@@ -5924,8 +5924,24 @@ var author$project$Main$addPointPlayer = F2(
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var author$project$Main$changeBallDirection = function (ball) {
-	return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -ball.speedx, ball.speedy);
+var elm$core$Basics$abs = function (n) {
+	return (n < 0) ? (-n) : n;
+};
+var author$project$Main$changeBallDirection = F2(
+	function (ball, player) {
+		var middlePaddle = (player.y + player.height) / 2;
+		var distanceMiddleBall = elm$core$Basics$abs(middlePaddle - ball.x);
+		var speedy = distanceMiddleBall / 20;
+		return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -ball.speedx, speedy);
+	});
+var author$project$Main$moveBall = function (ball) {
+	return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
+};
+var author$project$Main$changeBallDirectionSides = function (ball) {
+	return author$project$Main$moveBall(
+		_Utils_update(
+			ball,
+			{speedy: -ball.speedy}));
 };
 var elm$core$Basics$ge = _Utils_ge;
 var author$project$Main$checkCollisionBallPlayer = F2(
@@ -5943,17 +5959,14 @@ var author$project$Main$checkCollisionBallPlayer = F2(
 	});
 var author$project$Main$checkCollisionBallSides = F2(
 	function (ball, game) {
-		return (_Utils_cmp(ball.x - ball.r, game.x1) < 1) ? 1 : ((_Utils_cmp(ball.x + ball.r, game.x2) > -1) ? 2 : 0);
+		return (_Utils_cmp(ball.x - ball.r, game.x1) < 1) ? 1 : ((_Utils_cmp(ball.x + ball.r, game.x2) > -1) ? 2 : ((_Utils_cmp((ball.y + ball.r) + ball.speedy, game.y2) > 0) ? 3 : ((_Utils_cmp((ball.y - ball.r) + ball.speedy, game.y1) < 0) ? 4 : 0)));
 	});
-var author$project$Main$moveBall = function (ball) {
-	return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
-};
 var author$project$Main$resetBall = F3(
 	function (ball, game, window) {
 		var gameHeight = game.y2 - game.y1;
 		return _Utils_update(
 			ball,
-			{x: window.width / 2, y: gameHeight / 2});
+			{speedx: -ball.speedx, speedy: 0, x: window.width / 2, y: gameHeight / 2});
 	});
 var author$project$Main$updateBall = function (model) {
 	var score = model.score;
@@ -5977,15 +5990,27 @@ var author$project$Main$updateBall = function (model) {
 					ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
 					score: A2(author$project$Main$addPointPlayer, 1, model.score)
 				});
+		case 3:
+			return _Utils_update(
+				model,
+				{
+					ball: author$project$Main$changeBallDirectionSides(ball)
+				});
+		case 4:
+			return _Utils_update(
+				model,
+				{
+					ball: author$project$Main$changeBallDirectionSides(ball)
+				});
 		default:
 			return A2(author$project$Main$checkCollisionBallPlayer, ball, player1) ? _Utils_update(
 				model,
 				{
-					ball: author$project$Main$changeBallDirection(model.ball)
+					ball: A2(author$project$Main$changeBallDirection, model.ball, model.player1)
 				}) : (A2(author$project$Main$checkCollisionBallPlayer, ball, player2) ? _Utils_update(
 				model,
 				{
-					ball: author$project$Main$changeBallDirection(model.ball)
+					ball: A2(author$project$Main$changeBallDirection, model.ball, model.player2)
 				}) : _Utils_update(
 				model,
 				{
