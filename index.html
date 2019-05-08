@@ -4366,9 +4366,9 @@ function _Time_getZoneName()
 		callback(_Scheduler_succeed(name));
 	});
 }
-var author$project$Main$Model = F6(
-	function (player1, player2, ball, game, window, time) {
-		return {ball: ball, game: game, player1: player1, player2: player2, time: time, window: window};
+var author$project$Main$Model = F7(
+	function (player1, player2, ball, score, game, window, time) {
+		return {ball: ball, game: game, player1: player1, player2: player2, score: score, time: time, window: window};
 	});
 var author$project$Main$Ball = F5(
 	function (x, y, r, speedx, speedy) {
@@ -4471,14 +4471,19 @@ var author$project$Main$initGameSettings = F3(
 	function (width, height, scale) {
 		return A5(author$project$Main$GameSettings, (width / 2) - (width / 4), 0, (width / 2) + (width / 4), height / 2, author$project$Main$Play);
 	});
-var author$project$Main$Player = F7(
-	function (x, y, width, height, speed, score, direction) {
-		return {direction: direction, height: height, score: score, speed: speed, width: width, x: x, y: y};
+var author$project$Main$Player = F6(
+	function (x, y, width, height, speed, direction) {
+		return {direction: direction, height: height, speed: speed, width: width, x: x, y: y};
 	});
 var author$project$Main$initPlayer = F5(
 	function (x, y, playerWidth, playerHeight, gameHeight) {
-		return A7(author$project$Main$Player, x, y, playerWidth, playerHeight, gameHeight / (playerHeight * 2), 0, 0);
+		return A6(author$project$Main$Player, x, y, playerWidth, playerHeight, gameHeight / (playerHeight * 2), 0);
 	});
+var author$project$Main$Score = F2(
+	function (player1, player2) {
+		return {player1: player1, player2: player2};
+	});
+var author$project$Main$initScore = A2(author$project$Main$Score, 0, 0);
 var author$project$Main$WindowSettings = F4(
 	function (width, height, scale, focus) {
 		return {focus: focus, height: height, scale: scale, width: width};
@@ -4882,7 +4887,8 @@ var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$init = function (_n0) {
 	var windowSettings = A2(author$project$Main$initWindowSettings, 1920, 1080);
-	var playerWidth = 15 * windowSettings.scale;
+	var score = author$project$Main$initScore;
+	var playerWidth = 20 * windowSettings.scale;
 	var playerHeight = 80 * windowSettings.scale;
 	var gameSettings = A3(author$project$Main$initGameSettings, windowSettings.width, windowSettings.height, windowSettings.scale);
 	var x1 = gameSettings.x1;
@@ -4896,7 +4902,7 @@ var author$project$Main$init = function (_n0) {
 	var ballRadius = 10 * windowSettings.scale;
 	var ball = A4(author$project$Main$initBall, windowSettings.width / 2, gameHeight / 2, ballRadius, gameWidth);
 	return _Utils_Tuple2(
-		A6(author$project$Main$Model, player1, player2, ball, gameSettings, windowSettings, 0),
+		A7(author$project$Main$Model, player1, player2, ball, score, gameSettings, windowSettings, 0),
 		elm$core$Platform$Cmd$none);
 };
 var author$project$Main$Tick = function (a) {
@@ -4917,13 +4923,13 @@ var author$project$Main$Up = {$: 'Up'};
 var author$project$Main$toDirection = function (string) {
 	switch (string) {
 		case 'ArrowUp':
-			return author$project$Main$Player1(author$project$Main$Up);
-		case 'ArrowDown':
-			return author$project$Main$Player1(author$project$Main$Down);
-		case 'w':
 			return author$project$Main$Player2(author$project$Main$Up);
-		case 's':
+		case 'ArrowDown':
 			return author$project$Main$Player2(author$project$Main$Down);
+		case 'w':
+			return author$project$Main$Player1(author$project$Main$Up);
+		case 's':
+			return author$project$Main$Player1(author$project$Main$Down);
 		default:
 			return author$project$Main$System(author$project$Main$None);
 	}
@@ -4939,13 +4945,13 @@ var author$project$Main$Stop = {$: 'Stop'};
 var author$project$Main$toDirection_ = function (string) {
 	switch (string) {
 		case 'ArrowUp':
-			return author$project$Main$Player1(author$project$Main$Stop);
+			return author$project$Main$Player2(author$project$Main$Stop);
 		case 'ArrowDown':
-			return author$project$Main$Player1(author$project$Main$Stop);
+			return author$project$Main$Player2(author$project$Main$Stop);
 		case 'w':
-			return author$project$Main$Player2(author$project$Main$Stop);
+			return author$project$Main$Player1(author$project$Main$Stop);
 		case 's':
-			return author$project$Main$Player2(author$project$Main$Stop);
+			return author$project$Main$Player1(author$project$Main$Stop);
 		default:
 			return author$project$Main$System(author$project$Main$None);
 	}
@@ -5900,6 +5906,27 @@ var author$project$Main$updateDirection = F2(
 			player,
 			{direction: dir});
 	});
+var author$project$Main$addPointPlayer = F2(
+	function (player, score) {
+		switch (player) {
+			case 1:
+				return _Utils_update(
+					score,
+					{player1: score.player1 + 1});
+			case 2:
+				return _Utils_update(
+					score,
+					{player2: score.player2 + 1});
+			default:
+				return score;
+		}
+	});
+var elm$core$Basics$negate = function (n) {
+	return -n;
+};
+var author$project$Main$changeBallDirection = function (ball) {
+	return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -ball.speedx, ball.speedy);
+};
 var elm$core$Basics$ge = _Utils_ge;
 var author$project$Main$checkCollisionBallPlayer = F2(
 	function (ball, player) {
@@ -5912,15 +5939,60 @@ var author$project$Main$checkCollisionBallPlayer = F2(
 		var r = ball.r;
 		var cy = ball.y;
 		var cx = ball.x;
-		return (((_Utils_cmp((cx + sx) + r, x1) > -1) && (_Utils_cmp((cx + sx) + r, x2) < 1)) || ((_Utils_cmp((cx + sx) - r, x1) > -1) && (_Utils_cmp((cx + sx) - r, x2) < 1))) ? true : false;
+		return (((_Utils_cmp((cx + sx) + r, x1) > -1) && (_Utils_cmp((cx + sx) + r, x2) < 1)) || ((_Utils_cmp((cx + sx) - r, x1) > -1) && (_Utils_cmp((cx + sx) - r, x2) < 1))) ? ((((_Utils_cmp((cy + sy) + r, y1) > -1) && (_Utils_cmp((cy + sy) + r, y2) < 1)) || ((_Utils_cmp((cy + sy) - r, y1) > -1) && (_Utils_cmp((cy + sy) - r, y2) < 1))) ? true : false) : false;
 	});
-var elm$core$Basics$negate = function (n) {
-	return -n;
+var author$project$Main$checkCollisionBallSides = F2(
+	function (ball, game) {
+		return (_Utils_cmp(ball.x - ball.r, game.x1) < 1) ? 1 : ((_Utils_cmp(ball.x + ball.r, game.x2) > -1) ? 2 : 0);
+	});
+var author$project$Main$moveBall = function (ball) {
+	return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
 };
-var author$project$Main$updateBall = F3(
-	function (ball, player1, player2) {
-		return (A2(author$project$Main$checkCollisionBallPlayer, ball, player1) || A2(author$project$Main$checkCollisionBallPlayer, ball, player2)) ? A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -(ball.speedx + (ball.speedx / 5)), ball.speedy) : A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
+var author$project$Main$resetBall = F3(
+	function (ball, game, window) {
+		var gameHeight = game.y2 - game.y1;
+		return _Utils_update(
+			ball,
+			{x: window.width / 2, y: gameHeight / 2});
 	});
+var author$project$Main$updateBall = function (model) {
+	var score = model.score;
+	var player2 = model.player2;
+	var player1 = model.player1;
+	var game = model.game;
+	var ball = model.ball;
+	var collisionSide = A2(author$project$Main$checkCollisionBallSides, ball, game);
+	switch (collisionSide) {
+		case 1:
+			return _Utils_update(
+				model,
+				{
+					ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
+					score: A2(author$project$Main$addPointPlayer, 2, model.score)
+				});
+		case 2:
+			return _Utils_update(
+				model,
+				{
+					ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
+					score: A2(author$project$Main$addPointPlayer, 1, model.score)
+				});
+		default:
+			return A2(author$project$Main$checkCollisionBallPlayer, ball, player1) ? _Utils_update(
+				model,
+				{
+					ball: author$project$Main$changeBallDirection(model.ball)
+				}) : (A2(author$project$Main$checkCollisionBallPlayer, ball, player2) ? _Utils_update(
+				model,
+				{
+					ball: author$project$Main$changeBallDirection(model.ball)
+				}) : _Utils_update(
+				model,
+				{
+					ball: author$project$Main$moveBall(ball)
+				}));
+	}
+};
 var author$project$Main$validMovement = F2(
 	function (game, player) {
 		var dir = elm$core$String$fromInt(player.direction);
@@ -5940,14 +6012,15 @@ var author$project$Main$updatePlayer = F2(
 			{y: player.y + (player.direction * player.speed)}) : player;
 	});
 var author$project$Main$updateGame = function (model) {
-	return A6(
-		author$project$Main$Model,
-		A2(author$project$Main$updatePlayer, model.game, model.player1),
-		A2(author$project$Main$updatePlayer, model.game, model.player2),
-		A3(author$project$Main$updateBall, model.ball, model.player1, model.player2),
-		model.game,
-		model.window,
-		model.time + 1);
+	var player2 = A2(author$project$Main$updatePlayer, model.game, model.player2);
+	var player1 = A2(author$project$Main$updatePlayer, model.game, model.player1);
+	var modelAux = author$project$Main$updateBall(model);
+	var score = modelAux.score;
+	var time = modelAux.time + 1;
+	var window = modelAux.window;
+	var game = modelAux.game;
+	var ball = modelAux.ball;
+	return A7(author$project$Main$Model, player1, player2, ball, score, game, window, time);
 };
 var author$project$Main$update = F2(
 	function (msg, model) {
@@ -6087,11 +6160,27 @@ var author$project$Main$drawPlayer = function (player) {
 			]),
 		_List_Nil);
 };
-var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$svg$Svg$text = elm$virtual_dom$VirtualDom$text;
 var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
 var elm$svg$Svg$Attributes$fontSize = _VirtualDom_attribute('font-size');
+var author$project$Main$drawScore = F2(
+	function (score, scale) {
+		return A2(
+			elm$svg$Svg$text_,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$fontSize('10'),
+					elm$svg$Svg$Attributes$x('200'),
+					elm$svg$Svg$Attributes$y('100')
+				]),
+			_List_fromArray(
+				[
+					elm$svg$Svg$text(
+					elm$core$String$fromInt(score.player1))
+				]));
+	});
+var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var author$project$Main$view = function (model) {
 	return A2(
 		elm$svg$Svg$svg,
@@ -6108,6 +6197,7 @@ var author$project$Main$view = function (model) {
 				author$project$Main$drawPlayer(model.player1),
 				author$project$Main$drawPlayer(model.player2),
 				author$project$Main$drawBall(model.ball),
+				A2(author$project$Main$drawScore, model.score, model.window.scale),
 				A2(
 				elm$svg$Svg$text_,
 				_List_fromArray(
