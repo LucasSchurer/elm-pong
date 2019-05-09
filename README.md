@@ -42,10 +42,10 @@ Criado como uma atividade complementar da disciplina de Paradigmas de Programaç
  - [X] Implementar a movimentação dos jogadores, podendo com que os dois se movam ao mesmo tempo.
  - [X] Fazer com que a bola se mova.
  - [ ] Implementar um sistema de game-over.
- - [ ] Implementar colisão entre a bola e os jogadores, fazendo com que a trajetória da bola mude.
- - [ ] Aumentar os pontos de cada jogador quando a bola encontra a a lateral oposta da tela.
+ - [X] Implementar colisão entre a bola e os jogadores, fazendo com que a trajetória da bola mude.
+ - [X] Aumentar os pontos de cada jogador quando a bola encontra a a lateral oposta da tela.
  - [X] Aumentar a velocidade da bola aumente cada vez que é rebatida por um jogador.
- - [ ] Criação de um sistema de pause.
+ - [X] Criação de um sistema de pause.
  - [ ] Criação de um menu anterior a tela do jogo.
    - [ ] Botão de Jogar
    - [ ] Instruções na tela.

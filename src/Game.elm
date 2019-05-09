@@ -18,7 +18,9 @@ main =
 
 type State 
     = Play
+    | Waiting
     | Pause
+    | Menu
 
 type alias WindowSettings =
     { width : Float
@@ -135,7 +137,7 @@ initGameSettings width height scale =
         0
         ( width / 2 + width / 4 )
         ( height / 2 )
-        Play
+        Waiting
 
 initWindowSettings : Float -> Float -> WindowSettings
 initWindowSettings width height =
@@ -206,13 +208,27 @@ update msg model =
                     , Cmd.none 
                     )
 
+        System key ->
+            case key of
+                Space ->
+                    ( { model | game = changeState Play model.game } 
+                    , Cmd.none
+                    )
+                    
+                Stop ->
+                    ( { model | game = changeState Pause model.game }
+                    , Cmd.none 
+                    )
+
+                _ ->
+                    ( model
+                    , Cmd.none 
+                    )
+
         Tick time ->
             ( updateGame model
             , Cmd.none 
             ) 
-
-        _ ->
-            ( model, Cmd.none )
     
 validMovement : GameSettings -> Player -> Bool
 validMovement game player =
@@ -257,50 +273,56 @@ updateBall model =
             collisionSide = checkCollisionBallSides ball game
         
         in
-            case collisionSide of
-                1 ->
-                    { model | score = addPointPlayer 2 model.score, ball = resetBall model.ball model.game model.window }
+            if ( game.state == Play ) then
+                case collisionSide of
+                    1 ->
+                        { model | score = addPointPlayer 2 model.score, ball = resetBall model.ball model.game model.window, game = changeState Waiting model.game }
 
-                2 ->
-                    { model | score = addPointPlayer 1 model.score, ball = resetBall model.ball model.game model.window }
-                
-                3 ->
-                    { model | ball = changeBallDirectionSides ball }
-                
-                4 ->
-                    { model | ball = changeBallDirectionSides ball }
-                
-                _ -> 
-                    if checkCollisionBallPlayer ball player1 then
-                        { model | ball = changeBallDirection model.ball model.player1 }
+                    2 ->
+                        { model | score = addPointPlayer 1 model.score, ball = resetBall model.ball model.game model.window, game = changeState Waiting model.game }
+                    
+                    3 ->
+                        { model | ball = changeBallDirectionSides ball }
+                    
+                    4 ->
+                        { model | ball = changeBallDirectionSides ball }
+                    
+                    _ -> 
+                        if checkCollisionBallPlayer ball player1 then
+                            { model | ball = changeBallDirection model.ball model.player1 }
 
-                    else if checkCollisionBallPlayer ball player2 then
-                        { model | ball = changeBallDirection model.ball model.player2 }
-                        
-                    else
-                        { model | ball = moveBall ball }
+                        else if checkCollisionBallPlayer ball player2 then
+                            { model | ball = changeBallDirection model.ball model.player2 }
+                            
+                        else
+                            { model | ball = moveBall ball }
+                else
+                    model
 
 updateGame : Model -> Model
 updateGame model =
-    let
-        player1 = updatePlayer model.game model.player1 
-        player2 = updatePlayer model.game model.player2
-        modelAux = updateBall model
-        score = modelAux.score
-        ball = modelAux.ball
-        game = modelAux.game
-        window = modelAux.window
-        time = modelAux.time + 1 
+    if ( model.game.state == Play || model.game.state == Waiting ) then
+        let
+            player1 = updatePlayer model.game model.player1 
+            player2 = updatePlayer model.game model.player2
+            modelAux = updateBall model
+            score = modelAux.score
+            ball = modelAux.ball
+            game = modelAux.game
+            window = modelAux.window
+            time = modelAux.time + 1 
 
-    in
-        Model 
-            player1
-            player2
-            ball
-            score
-            game
-            window
-            time
+        in
+            Model 
+                player1
+                player2
+                ball
+                score
+                game
+                window
+                time
+    else
+        model
 
 checkCollisionBallPlayer : Ball -> Player -> Bool
 checkCollisionBallPlayer ball player = 
@@ -351,25 +373,29 @@ addPointPlayer player score =
 
 changeBallDirection : Ball -> Player -> Ball
 changeBallDirection ball player =
+    Ball 
+        ( ball.x + ball.speedx )
+        ( ball.y + ball.speedy )
+        ball.r
+        ( negate ( ball.speedx ) )
+        ( calculateYSpeedChange ball player )
+
+calculateYSpeedChange : Ball -> Player -> Float
+calculateYSpeedChange ball player =
     let
         middlePaddle = ( player.y + player.height ) / 2
-        distanceMiddleBall = abs ( middlePaddle - ball.x )
-        speedy = distanceMiddleBall / 20
+        distanceMiddleBall = ( negate ( middlePaddle - ball.y ) ) / player.height
+        speed = ( negate ball.speedy ) + distanceMiddleBall
 
-    in    
-        Ball 
-            ( ball.x + ball.speedx )
-            ( ball.y + ball.speedy )
-            ball.r
-            ( negate ( ball.speedx ) )
-            speedy
-
+    in
+        speed
+        
 changeBallDirectionSides : Ball -> Ball
 changeBallDirectionSides ball =
     moveBall { ball | speedy = negate ball.speedy }
 
 moveBall : Ball -> Ball
-moveBall ball =
+moveBall ball = 
     Ball
         ( ball.x + ball.speedx )
         ( ball.y + ball.speedy )
@@ -384,6 +410,9 @@ resetBall ball game window =
     in
     { ball | x = window.width / 2, y = gameHeight / 2, speedx = negate ball.speedx, speedy = 0 }
     
+changeState : State -> GameSettings -> GameSettings
+changeState state game =
+    { game | state = state }
 
 -- Subscriptions
 
@@ -405,6 +434,12 @@ toDirection string =
 
         "s" ->
             Player1 Down
+
+        " " ->
+            System Space
+
+        "p" ->
+            System Stop
 
         _ ->
             System None
@@ -430,7 +465,6 @@ toDirection_ string =
 
         _ ->
             System None
-
 
 subscriptions : Model -> Sub Msg
 subscriptions _ =

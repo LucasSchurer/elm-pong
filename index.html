@@ -4464,12 +4464,12 @@ var author$project$Main$GameSettings = F5(
 	function (x1, y1, x2, y2, state) {
 		return {state: state, x1: x1, x2: x2, y1: y1, y2: y2};
 	});
-var author$project$Main$Play = {$: 'Play'};
+var author$project$Main$Waiting = {$: 'Waiting'};
 var elm$core$Basics$add = _Basics_add;
 var elm$core$Basics$sub = _Basics_sub;
 var author$project$Main$initGameSettings = F3(
 	function (width, height, scale) {
-		return A5(author$project$Main$GameSettings, (width / 2) - (width / 4), 0, (width / 2) + (width / 4), height / 2, author$project$Main$Play);
+		return A5(author$project$Main$GameSettings, (width / 2) - (width / 4), 0, (width / 2) + (width / 4), height / 2, author$project$Main$Waiting);
 	});
 var author$project$Main$Player = F6(
 	function (x, y, width, height, speed, direction) {
@@ -4916,6 +4916,8 @@ var author$project$Main$Player1 = function (a) {
 var author$project$Main$Player2 = function (a) {
 	return {$: 'Player2', a: a};
 };
+var author$project$Main$Space = {$: 'Space'};
+var author$project$Main$Stop = {$: 'Stop'};
 var author$project$Main$System = function (a) {
 	return {$: 'System', a: a};
 };
@@ -4930,6 +4932,10 @@ var author$project$Main$toDirection = function (string) {
 			return author$project$Main$Player1(author$project$Main$Up);
 		case 's':
 			return author$project$Main$Player1(author$project$Main$Down);
+		case ' ':
+			return author$project$Main$System(author$project$Main$Space);
+		case 'p':
+			return author$project$Main$System(author$project$Main$Stop);
 		default:
 			return author$project$Main$System(author$project$Main$None);
 	}
@@ -4941,7 +4947,6 @@ var author$project$Main$keyDecoder = A2(
 	elm$json$Json$Decode$map,
 	author$project$Main$toDirection,
 	A2(elm$json$Json$Decode$field, 'key', elm$json$Json$Decode$string));
-var author$project$Main$Stop = {$: 'Stop'};
 var author$project$Main$toDirection_ = function (string) {
 	switch (string) {
 		case 'ArrowUp':
@@ -5900,6 +5905,14 @@ var author$project$Main$subscriptions = function (_n0) {
 				A2(elm$time$Time$every, 1000 / 60, author$project$Main$Tick)
 			]));
 };
+var author$project$Main$Pause = {$: 'Pause'};
+var author$project$Main$Play = {$: 'Play'};
+var author$project$Main$changeState = F2(
+	function (state, game) {
+		return _Utils_update(
+			game,
+			{state: state});
+	});
 var author$project$Main$updateDirection = F2(
 	function (player, dir) {
 		return _Utils_update(
@@ -5924,15 +5937,22 @@ var author$project$Main$addPointPlayer = F2(
 var elm$core$Basics$negate = function (n) {
 	return -n;
 };
-var elm$core$Basics$abs = function (n) {
-	return (n < 0) ? (-n) : n;
-};
-var author$project$Main$changeBallDirection = F2(
+var author$project$Main$calculateYSpeedChange = F2(
 	function (ball, player) {
 		var middlePaddle = (player.y + player.height) / 2;
-		var distanceMiddleBall = elm$core$Basics$abs(middlePaddle - ball.x);
-		var speedy = distanceMiddleBall / 20;
-		return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, -ball.speedx, speedy);
+		var distanceMiddleBall = (-(middlePaddle - ball.y)) / player.height;
+		var speed = (-ball.speedy) + distanceMiddleBall;
+		return speed;
+	});
+var author$project$Main$changeBallDirection = F2(
+	function (ball, player) {
+		return A5(
+			author$project$Main$Ball,
+			ball.x + ball.speedx,
+			ball.y + ball.speedy,
+			ball.r,
+			-ball.speedx,
+			A2(author$project$Main$calculateYSpeedChange, ball, player));
 	});
 var author$project$Main$moveBall = function (ball) {
 	return A5(author$project$Main$Ball, ball.x + ball.speedx, ball.y + ball.speedy, ball.r, ball.speedx, ball.speedy);
@@ -5975,47 +5995,53 @@ var author$project$Main$updateBall = function (model) {
 	var game = model.game;
 	var ball = model.ball;
 	var collisionSide = A2(author$project$Main$checkCollisionBallSides, ball, game);
-	switch (collisionSide) {
-		case 1:
-			return _Utils_update(
-				model,
-				{
-					ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
-					score: A2(author$project$Main$addPointPlayer, 2, model.score)
-				});
-		case 2:
-			return _Utils_update(
-				model,
-				{
-					ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
-					score: A2(author$project$Main$addPointPlayer, 1, model.score)
-				});
-		case 3:
-			return _Utils_update(
-				model,
-				{
-					ball: author$project$Main$changeBallDirectionSides(ball)
-				});
-		case 4:
-			return _Utils_update(
-				model,
-				{
-					ball: author$project$Main$changeBallDirectionSides(ball)
-				});
-		default:
-			return A2(author$project$Main$checkCollisionBallPlayer, ball, player1) ? _Utils_update(
-				model,
-				{
-					ball: A2(author$project$Main$changeBallDirection, model.ball, model.player1)
-				}) : (A2(author$project$Main$checkCollisionBallPlayer, ball, player2) ? _Utils_update(
-				model,
-				{
-					ball: A2(author$project$Main$changeBallDirection, model.ball, model.player2)
-				}) : _Utils_update(
-				model,
-				{
-					ball: author$project$Main$moveBall(ball)
-				}));
+	if (_Utils_eq(game.state, author$project$Main$Play)) {
+		switch (collisionSide) {
+			case 1:
+				return _Utils_update(
+					model,
+					{
+						ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
+						game: A2(author$project$Main$changeState, author$project$Main$Waiting, model.game),
+						score: A2(author$project$Main$addPointPlayer, 2, model.score)
+					});
+			case 2:
+				return _Utils_update(
+					model,
+					{
+						ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
+						game: A2(author$project$Main$changeState, author$project$Main$Waiting, model.game),
+						score: A2(author$project$Main$addPointPlayer, 1, model.score)
+					});
+			case 3:
+				return _Utils_update(
+					model,
+					{
+						ball: author$project$Main$changeBallDirectionSides(ball)
+					});
+			case 4:
+				return _Utils_update(
+					model,
+					{
+						ball: author$project$Main$changeBallDirectionSides(ball)
+					});
+			default:
+				return A2(author$project$Main$checkCollisionBallPlayer, ball, player1) ? _Utils_update(
+					model,
+					{
+						ball: A2(author$project$Main$changeBallDirection, model.ball, model.player1)
+					}) : (A2(author$project$Main$checkCollisionBallPlayer, ball, player2) ? _Utils_update(
+					model,
+					{
+						ball: A2(author$project$Main$changeBallDirection, model.ball, model.player2)
+					}) : _Utils_update(
+					model,
+					{
+						ball: author$project$Main$moveBall(ball)
+					}));
+		}
+	} else {
+		return model;
 	}
 };
 var author$project$Main$validMovement = F2(
@@ -6037,15 +6063,19 @@ var author$project$Main$updatePlayer = F2(
 			{y: player.y + (player.direction * player.speed)}) : player;
 	});
 var author$project$Main$updateGame = function (model) {
-	var player2 = A2(author$project$Main$updatePlayer, model.game, model.player2);
-	var player1 = A2(author$project$Main$updatePlayer, model.game, model.player1);
-	var modelAux = author$project$Main$updateBall(model);
-	var score = modelAux.score;
-	var time = modelAux.time + 1;
-	var window = modelAux.window;
-	var game = modelAux.game;
-	var ball = modelAux.ball;
-	return A7(author$project$Main$Model, player1, player2, ball, score, game, window, time);
+	if (_Utils_eq(model.game.state, author$project$Main$Play) || _Utils_eq(model.game.state, author$project$Main$Waiting)) {
+		var player2 = A2(author$project$Main$updatePlayer, model.game, model.player2);
+		var player1 = A2(author$project$Main$updatePlayer, model.game, model.player1);
+		var modelAux = author$project$Main$updateBall(model);
+		var score = modelAux.score;
+		var time = modelAux.time + 1;
+		var window = modelAux.window;
+		var game = modelAux.game;
+		var ball = modelAux.ball;
+		return A7(author$project$Main$Model, player1, player2, ball, score, game, window, time);
+	} else {
+		return model;
+	}
 };
 var author$project$Main$update = F2(
 	function (msg, model) {
@@ -6110,13 +6140,33 @@ var author$project$Main$update = F2(
 					default:
 						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
-			case 'Tick':
+			case 'System':
+				var key = msg.a;
+				switch (key.$) {
+					case 'Space':
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									game: A2(author$project$Main$changeState, author$project$Main$Play, model.game)
+								}),
+							elm$core$Platform$Cmd$none);
+					case 'Stop':
+						return _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									game: A2(author$project$Main$changeState, author$project$Main$Pause, model.game)
+								}),
+							elm$core$Platform$Cmd$none);
+					default:
+						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
+				}
+			default:
 				var time = msg.a;
 				return _Utils_Tuple2(
 					author$project$Main$updateGame(model),
 					elm$core$Platform$Cmd$none);
-			default:
-				return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 		}
 	});
 var elm$core$String$fromFloat = _String_fromNumber;
