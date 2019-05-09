@@ -66,7 +66,6 @@ type alias Model =
     , score : Score
     , game : GameSettings
     , window : WindowSettings
-    , time : Time
     }
 
 init : () -> ( Model, Cmd Msg )
@@ -114,7 +113,7 @@ init _ =
             initScore
 
     in
-        ( Model player1 player2 ball score gameSettings windowSettings 0
+        ( Model player1 player2 ball score gameSettings windowSettings
         , Cmd.none
         )
 
@@ -310,7 +309,6 @@ updateGame model =
             ball = modelAux.ball
             game = modelAux.game
             window = modelAux.window
-            time = modelAux.time + 1 
 
         in
             Model 
@@ -320,7 +318,6 @@ updateGame model =
                 score
                 game
                 window
-                time
     else
         model
 
@@ -482,32 +479,31 @@ view model =
         [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
         , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
         ]
-        [ drawBackground model.game
-        , drawPlayer model.player1
-        , drawPlayer model.player2
+        [ drawBackground model.game model.window.scale
+        , drawPlayer model.player1 model.window.scale
+        , drawPlayer model.player2 model.window.scale
         , drawBall model.ball
-        , drawScore model.score model.window.scale
-        , Svg.text_ [ Svg.Attributes.fontSize "40", Svg.Attributes.x "800", Svg.Attributes.y "600" ] [ Svg.text ( String.fromFloat model.time ) ] 
+        , drawScore model.score model.window
         ]    
         
-drawBackground : GameSettings -> Svg.Svg Msg
-drawBackground settings = 
+drawBackground : GameSettings -> Float -> Svg.Svg Msg
+drawBackground settings scale = 
     Svg.rect
         [ Svg.Attributes.x ( String.fromFloat settings.x1 ) 
         , Svg.Attributes.y ( String.fromFloat settings.y1 )
-        , Svg.Attributes.rx "10"
-        , Svg.Attributes.ry "10"
+        , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
+        , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
         , Svg.Attributes.width ( String.fromFloat ( settings.x2 - settings.x1 ) )
         , Svg.Attributes.height ( String.fromFloat ( settings.y2 - settings.y1 ) )
         ] []
 
-drawPlayer : Player -> Svg.Svg Msg
-drawPlayer player =
+drawPlayer : Player -> Float -> Svg.Svg Msg
+drawPlayer player scale =
     Svg.rect
         [ Svg.Attributes.x ( String.fromFloat player.x ) 
         , Svg.Attributes.y ( String.fromFloat player.y )
-        , Svg.Attributes.rx "10"
-        , Svg.Attributes.ry "10"
+        , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
+        , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
         , Svg.Attributes.width ( String.fromFloat player.width )
         , Svg.Attributes.height ( String.fromFloat player.height )
         , Svg.Attributes.fill "white"
@@ -522,8 +518,8 @@ drawBall ball =
         , Svg.Attributes.fill "white"
         ] []
 
-drawScore : Score -> Float -> Svg.Svg Msg
-drawScore score scale =
+drawScore : Score -> WindowSettings -> Svg.Svg Msg
+drawScore score window =
     Svg.text_ 
         [ Svg.Attributes.fontSize "10"
         , Svg.Attributes.x "200"

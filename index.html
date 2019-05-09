@@ -4366,9 +4366,9 @@ function _Time_getZoneName()
 		callback(_Scheduler_succeed(name));
 	});
 }
-var author$project$Main$Model = F7(
-	function (player1, player2, ball, score, game, window, time) {
-		return {ball: ball, game: game, player1: player1, player2: player2, score: score, time: time, window: window};
+var author$project$Main$Model = F6(
+	function (player1, player2, ball, score, game, window) {
+		return {ball: ball, game: game, player1: player1, player2: player2, score: score, window: window};
 	});
 var author$project$Main$Ball = F5(
 	function (x, y, r, speedx, speedy) {
@@ -4902,7 +4902,7 @@ var author$project$Main$init = function (_n0) {
 	var ballRadius = 10 * windowSettings.scale;
 	var ball = A4(author$project$Main$initBall, windowSettings.width / 2, gameHeight / 2, ballRadius, gameWidth);
 	return _Utils_Tuple2(
-		A7(author$project$Main$Model, player1, player2, ball, score, gameSettings, windowSettings, 0),
+		A6(author$project$Main$Model, player1, player2, ball, score, gameSettings, windowSettings),
 		elm$core$Platform$Cmd$none);
 };
 var author$project$Main$Tick = function (a) {
@@ -6068,11 +6068,10 @@ var author$project$Main$updateGame = function (model) {
 		var player1 = A2(author$project$Main$updatePlayer, model.game, model.player1);
 		var modelAux = author$project$Main$updateBall(model);
 		var score = modelAux.score;
-		var time = modelAux.time + 1;
 		var window = modelAux.window;
 		var game = modelAux.game;
 		var ball = modelAux.ball;
-		return A7(author$project$Main$Model, player1, player2, ball, score, game, window, time);
+		return A6(author$project$Main$Model, player1, player2, ball, score, game, window);
 	} else {
 		return model;
 	}
@@ -6178,24 +6177,27 @@ var elm$svg$Svg$Attributes$ry = _VirtualDom_attribute('ry');
 var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var elm$svg$Svg$Attributes$x = _VirtualDom_attribute('x');
 var elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
-var author$project$Main$drawBackground = function (settings) {
-	return A2(
-		elm$svg$Svg$rect,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$x(
-				elm$core$String$fromFloat(settings.x1)),
-				elm$svg$Svg$Attributes$y(
-				elm$core$String$fromFloat(settings.y1)),
-				elm$svg$Svg$Attributes$rx('10'),
-				elm$svg$Svg$Attributes$ry('10'),
-				elm$svg$Svg$Attributes$width(
-				elm$core$String$fromFloat(settings.x2 - settings.x1)),
-				elm$svg$Svg$Attributes$height(
-				elm$core$String$fromFloat(settings.y2 - settings.y1))
-			]),
-		_List_Nil);
-};
+var author$project$Main$drawBackground = F2(
+	function (settings, scale) {
+		return A2(
+			elm$svg$Svg$rect,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(settings.x1)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(settings.y1)),
+					elm$svg$Svg$Attributes$rx(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$ry(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$width(
+					elm$core$String$fromFloat(settings.x2 - settings.x1)),
+					elm$svg$Svg$Attributes$height(
+					elm$core$String$fromFloat(settings.y2 - settings.y1))
+				]),
+			_List_Nil);
+	});
 var elm$svg$Svg$circle = elm$svg$Svg$trustedNode('circle');
 var elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
 var elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
@@ -6216,31 +6218,34 @@ var author$project$Main$drawBall = function (ball) {
 			]),
 		_List_Nil);
 };
-var author$project$Main$drawPlayer = function (player) {
-	return A2(
-		elm$svg$Svg$rect,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$x(
-				elm$core$String$fromFloat(player.x)),
-				elm$svg$Svg$Attributes$y(
-				elm$core$String$fromFloat(player.y)),
-				elm$svg$Svg$Attributes$rx('10'),
-				elm$svg$Svg$Attributes$ry('10'),
-				elm$svg$Svg$Attributes$width(
-				elm$core$String$fromFloat(player.width)),
-				elm$svg$Svg$Attributes$height(
-				elm$core$String$fromFloat(player.height)),
-				elm$svg$Svg$Attributes$fill('white')
-			]),
-		_List_Nil);
-};
+var author$project$Main$drawPlayer = F2(
+	function (player, scale) {
+		return A2(
+			elm$svg$Svg$rect,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(player.x)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(player.y)),
+					elm$svg$Svg$Attributes$rx(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$ry(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$width(
+					elm$core$String$fromFloat(player.width)),
+					elm$svg$Svg$Attributes$height(
+					elm$core$String$fromFloat(player.height)),
+					elm$svg$Svg$Attributes$fill('white')
+				]),
+			_List_Nil);
+	});
 var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$svg$Svg$text = elm$virtual_dom$VirtualDom$text;
 var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
 var elm$svg$Svg$Attributes$fontSize = _VirtualDom_attribute('font-size');
 var author$project$Main$drawScore = F2(
-	function (score, scale) {
+	function (score, window) {
 		return A2(
 			elm$svg$Svg$text_,
 			_List_fromArray(
@@ -6268,24 +6273,11 @@ var author$project$Main$view = function (model) {
 			]),
 		_List_fromArray(
 			[
-				author$project$Main$drawBackground(model.game),
-				author$project$Main$drawPlayer(model.player1),
-				author$project$Main$drawPlayer(model.player2),
+				A2(author$project$Main$drawBackground, model.game, model.window.scale),
+				A2(author$project$Main$drawPlayer, model.player1, model.window.scale),
+				A2(author$project$Main$drawPlayer, model.player2, model.window.scale),
 				author$project$Main$drawBall(model.ball),
-				A2(author$project$Main$drawScore, model.score, model.window.scale),
-				A2(
-				elm$svg$Svg$text_,
-				_List_fromArray(
-					[
-						elm$svg$Svg$Attributes$fontSize('40'),
-						elm$svg$Svg$Attributes$x('800'),
-						elm$svg$Svg$Attributes$y('600')
-					]),
-				_List_fromArray(
-					[
-						elm$svg$Svg$text(
-						elm$core$String$fromFloat(model.time))
-					]))
+				A2(author$project$Main$drawScore, model.score, model.window)
 			]));
 };
 var elm$browser$Browser$element = _Browser_element;
