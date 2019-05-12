@@ -81,7 +81,7 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        windowSettings = initWindowSettings 1920 1080
+        windowSettings = initWindowSettings 1280 720
         gameSettings = initGameSettings windowSettings.width windowSettings.height windowSettings.scale
 
         x1 = gameSettings.x1
@@ -748,19 +748,19 @@ drawControls game scale =
         
         message1 = "P to pause and unpause"
         message1PosX = game.x1
-        message1PosY = ( game.y2 + fontSize*2 ) * scale
+        message1PosY = ( game.y2 + fontSize*2) 
 
         message2 = "Space to release the ball"
         message2PosX = game.x1
-        message2PosY = ( game.y2 + fontSize*4 ) * scale
+        message2PosY = ( game.y2 + fontSize*4 ) 
 
         message3 = "W/S to control player 1"
         message3PosX = game.x1
-        message3PosY = ( game.y2 + fontSize*6 ) * scale
+        message3PosY = ( game.y2 + fontSize*6 ) 
 
         message4 = "UpArrow/DownArrow to control player 2"
         message4PosX = game.x1
-        message4PosY =  ( game.y2 + fontSize*8 ) * scale
+        message4PosY =  ( game.y2 + fontSize*8 )
 
 
     in    
