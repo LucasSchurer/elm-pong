@@ -35,13 +35,9 @@ Criado como uma atividade complementar da disciplina de Paradigmas de Programaç
 
  - [x] Criar um README para o programa. 
  - [X] Desenhar o básico das informações visuais do jogo. 
-   - [ ] Jogadores
-   - [ ] Bola
-   - [ ] Background 
-   - [ ] Score 
  - [X] Implementar a movimentação dos jogadores, podendo com que os dois se movam ao mesmo tempo.
  - [X] Fazer com que a bola se mova.
- - [ ] Implementar um sistema de game-over.
+ - [X] Implementar um sistema de game-over.
  - [X] Implementar colisão entre a bola e os jogadores, fazendo com que a trajetória da bola mude.
  - [X] Aumentar os pontos de cada jogador quando a bola encontra a a lateral oposta da tela.
  - [X] Aumentar a velocidade da bola aumente cada vez que é rebatida por um jogador.

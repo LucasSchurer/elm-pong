@@ -4460,16 +4460,16 @@ var author$project$Main$initBall = F4(
 	function (x, y, ballRadius, gameWidth) {
 		return A5(author$project$Main$Ball, x, y, ballRadius, gameWidth / (ballRadius * 30), 0);
 	});
-var author$project$Main$GameSettings = F5(
-	function (x1, y1, x2, y2, state) {
-		return {state: state, x1: x1, x2: x2, y1: y1, y2: y2};
+var author$project$Main$GameSettings = F6(
+	function (x1, y1, x2, y2, state, fps) {
+		return {fps: fps, state: state, x1: x1, x2: x2, y1: y1, y2: y2};
 	});
-var author$project$Main$Waiting = {$: 'Waiting'};
+var author$project$Main$Play = {$: 'Play'};
 var elm$core$Basics$add = _Basics_add;
 var elm$core$Basics$sub = _Basics_sub;
 var author$project$Main$initGameSettings = F3(
 	function (width, height, scale) {
-		return A5(author$project$Main$GameSettings, (width / 2) - (width / 4), 0, (width / 2) + (width / 4), height / 2, author$project$Main$Waiting);
+		return A6(author$project$Main$GameSettings, (width / 2) - (width / 4), 0, (width / 2) + (width / 4), height / 2, author$project$Main$Play, 120);
 	});
 var author$project$Main$Player = F6(
 	function (x, y, width, height, speed, direction) {
@@ -5896,17 +5896,16 @@ var elm$time$Time$every = F2(
 		return elm$time$Time$subscription(
 			A2(elm$time$Time$Every, interval, tagger));
 	});
-var author$project$Main$subscriptions = function (_n0) {
+var author$project$Main$subscriptions = function (model) {
 	return elm$core$Platform$Sub$batch(
 		_List_fromArray(
 			[
 				elm$browser$Browser$Events$onKeyDown(author$project$Main$keyDecoder),
 				elm$browser$Browser$Events$onKeyUp(author$project$Main$keyDecoder_),
-				A2(elm$time$Time$every, 1000 / 60, author$project$Main$Tick)
+				A2(elm$time$Time$every, 1000 / model.game.fps, author$project$Main$Tick)
 			]));
 };
 var author$project$Main$Pause = {$: 'Pause'};
-var author$project$Main$Play = {$: 'Play'};
 var author$project$Main$changeState = F2(
 	function (state, game) {
 		return _Utils_update(
@@ -5918,6 +5917,12 @@ var author$project$Main$updateDirection = F2(
 		return _Utils_update(
 			player,
 			{direction: dir});
+	});
+var author$project$Main$Waiting = {$: 'Waiting'};
+var author$project$Main$GameOver = {$: 'GameOver'};
+var author$project$Main$checkGameOver = F2(
+	function (score, state) {
+		return ((score.player1 > 4) || (score.player2 > 4)) ? author$project$Main$GameOver : state;
 	});
 var author$project$Main$addPointPlayer = F2(
 	function (player, score) {
@@ -5981,12 +5986,13 @@ var author$project$Main$checkCollisionBallSides = F2(
 	function (ball, game) {
 		return (_Utils_cmp(ball.x - ball.r, game.x1) < 1) ? 1 : ((_Utils_cmp(ball.x + ball.r, game.x2) > -1) ? 2 : ((_Utils_cmp((ball.y + ball.r) + ball.speedy, game.y2) > 0) ? 3 : ((_Utils_cmp((ball.y - ball.r) + ball.speedy, game.y1) < 0) ? 4 : 0)));
 	});
-var author$project$Main$resetBall = F3(
-	function (ball, game, window) {
+var author$project$Main$resetBall = F2(
+	function (ball, game) {
+		var middleWidth = game.x2 - game.x1;
 		var gameHeight = game.y2 - game.y1;
 		return _Utils_update(
 			ball,
-			{speedx: -ball.speedx, speedy: 0, x: window.width / 2, y: gameHeight / 2});
+			{speedx: -ball.speedx, speedy: 0, x: middleWidth, y: gameHeight / 2});
 	});
 var author$project$Main$updateBall = function (model) {
 	var score = model.score;
@@ -6001,7 +6007,7 @@ var author$project$Main$updateBall = function (model) {
 				return _Utils_update(
 					model,
 					{
-						ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
+						ball: A2(author$project$Main$resetBall, model.ball, model.game),
 						game: A2(author$project$Main$changeState, author$project$Main$Waiting, model.game),
 						score: A2(author$project$Main$addPointPlayer, 2, model.score)
 					});
@@ -6009,7 +6015,7 @@ var author$project$Main$updateBall = function (model) {
 				return _Utils_update(
 					model,
 					{
-						ball: A3(author$project$Main$resetBall, model.ball, model.game, model.window),
+						ball: A2(author$project$Main$resetBall, model.ball, model.game),
 						game: A2(author$project$Main$changeState, author$project$Main$Waiting, model.game),
 						score: A2(author$project$Main$addPointPlayer, 1, model.score)
 					});
@@ -6064,14 +6070,25 @@ var author$project$Main$updatePlayer = F2(
 	});
 var author$project$Main$updateGame = function (model) {
 	if (_Utils_eq(model.game.state, author$project$Main$Play) || _Utils_eq(model.game.state, author$project$Main$Waiting)) {
-		var player2 = A2(author$project$Main$updatePlayer, model.game, model.player2);
-		var player1 = A2(author$project$Main$updatePlayer, model.game, model.player1);
 		var modelAux = author$project$Main$updateBall(model);
+		var player1 = _Utils_eq(model.game.state, author$project$Main$Play) ? A2(author$project$Main$updatePlayer, modelAux.game, model.player1) : modelAux.player1;
+		var player2 = _Utils_eq(model.game.state, author$project$Main$Play) ? A2(author$project$Main$updatePlayer, modelAux.game, model.player2) : modelAux.player2;
 		var score = modelAux.score;
 		var window = modelAux.window;
 		var game = modelAux.game;
 		var ball = modelAux.ball;
-		return A6(author$project$Main$Model, player1, player2, ball, score, game, window);
+		return A6(
+			author$project$Main$Model,
+			player1,
+			player2,
+			ball,
+			score,
+			_Utils_update(
+				game,
+				{
+					state: A2(author$project$Main$checkGameOver, score, game.state)
+				}),
+			window);
 	} else {
 		return model;
 	}
@@ -6151,13 +6168,19 @@ var author$project$Main$update = F2(
 								}),
 							elm$core$Platform$Cmd$none);
 					case 'Stop':
-						return _Utils_Tuple2(
+						return _Utils_eq(model.game.state, author$project$Main$Play) ? _Utils_Tuple2(
 							_Utils_update(
 								model,
 								{
 									game: A2(author$project$Main$changeState, author$project$Main$Pause, model.game)
 								}),
-							elm$core$Platform$Cmd$none);
+							elm$core$Platform$Cmd$none) : (_Utils_eq(model.game.state, author$project$Main$Pause) ? _Utils_Tuple2(
+							_Utils_update(
+								model,
+								{
+									game: A2(author$project$Main$changeState, author$project$Main$Play, model.game)
+								}),
+							elm$core$Platform$Cmd$none) : _Utils_Tuple2(model, elm$core$Platform$Cmd$none));
 					default:
 						return _Utils_Tuple2(model, elm$core$Platform$Cmd$none);
 				}
@@ -6195,6 +6218,33 @@ var author$project$Main$drawBackground = F2(
 					elm$core$String$fromFloat(settings.x2 - settings.x1)),
 					elm$svg$Svg$Attributes$height(
 					elm$core$String$fromFloat(settings.y2 - settings.y1))
+				]),
+			_List_Nil);
+	});
+var elm$svg$Svg$line = elm$svg$Svg$trustedNode('line');
+var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
+var elm$svg$Svg$Attributes$strokeDasharray = _VirtualDom_attribute('stroke-dasharray');
+var elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
+var elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
+var elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
+var elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
+var author$project$Main$drawBackgroundLine = F2(
+	function (settings, scale) {
+		return A2(
+			elm$svg$Svg$line,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$x1(
+					elm$core$String$fromFloat(settings.x2 - settings.x1)),
+					elm$svg$Svg$Attributes$y1(
+					elm$core$String$fromFloat(settings.y1)),
+					elm$svg$Svg$Attributes$x2(
+					elm$core$String$fromFloat(settings.x2 - settings.x1)),
+					elm$svg$Svg$Attributes$y2(
+					elm$core$String$fromFloat(settings.y2)),
+					elm$svg$Svg$Attributes$stroke('white'),
+					elm$svg$Svg$Attributes$strokeDasharray(
+					elm$core$String$fromFloat(10 * scale) + (',' + elm$core$String$fromFloat(4 * scale)))
 				]),
 			_List_Nil);
 	});
@@ -6244,15 +6294,23 @@ var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
 var elm$svg$Svg$text = elm$virtual_dom$VirtualDom$text;
 var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
 var elm$svg$Svg$Attributes$fontSize = _VirtualDom_attribute('font-size');
-var author$project$Main$drawScore = F2(
-	function (score, window) {
+var author$project$Main$drawScore1 = F3(
+	function (score, game, scale) {
+		var middleScreenX = game.x2 - game.x1;
+		var fontSize = 50 * scale;
+		var fontX = middleScreenX - fontSize;
+		var fontY = game.y1 + fontSize;
 		return A2(
 			elm$svg$Svg$text_,
 			_List_fromArray(
 				[
-					elm$svg$Svg$Attributes$fontSize('10'),
-					elm$svg$Svg$Attributes$x('200'),
-					elm$svg$Svg$Attributes$y('100')
+					elm$svg$Svg$Attributes$fontSize(
+					elm$core$String$fromFloat(fontSize)),
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(fontX)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(fontY)),
+					elm$svg$Svg$Attributes$fill('white')
 				]),
 			_List_fromArray(
 				[
@@ -6260,8 +6318,63 @@ var author$project$Main$drawScore = F2(
 					elm$core$String$fromInt(score.player1))
 				]));
 	});
+var author$project$Main$drawScore2 = F3(
+	function (score, game, scale) {
+		var middleScreenX = game.x2 - game.x1;
+		var fontSize = 50 * scale;
+		var fontX = middleScreenX + (fontSize / 2);
+		var fontY = game.y1 + fontSize;
+		return A2(
+			elm$svg$Svg$text_,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$fontSize(
+					elm$core$String$fromFloat(fontSize)),
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(fontX)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(fontY)),
+					elm$svg$Svg$Attributes$fill('white')
+				]),
+			_List_fromArray(
+				[
+					elm$svg$Svg$text(
+					elm$core$String$fromInt(score.player2))
+				]));
+	});
+var author$project$Main$drawState = function (state) {
+	switch (state.$) {
+		case 'Play':
+			return 'Playing';
+		case 'Pause':
+			return 'Paused';
+		case 'Waiting':
+			return 'Waiting';
+		case 'Menu':
+			return 'Menu';
+		default:
+			return 'Game Over';
+	}
+};
+var elm$svg$Svg$Attributes$fontFamily = _VirtualDom_attribute('font-family');
+var author$project$Main$drawState1 = function (state) {
+	return A2(
+		elm$svg$Svg$text_,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$fontSize('30'),
+				elm$svg$Svg$Attributes$x('600'),
+				elm$svg$Svg$Attributes$y('800'),
+				elm$svg$Svg$Attributes$fontFamily('PressStart; src: ./src/PressStart.otf')
+			]),
+		_List_fromArray(
+			[
+				elm$svg$Svg$text(
+				author$project$Main$drawState(state))
+			]));
+};
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
-var author$project$Main$view = function (model) {
+var author$project$Main$drawGame = function (model) {
 	return A2(
 		elm$svg$Svg$svg,
 		_List_fromArray(
@@ -6274,11 +6387,164 @@ var author$project$Main$view = function (model) {
 		_List_fromArray(
 			[
 				A2(author$project$Main$drawBackground, model.game, model.window.scale),
+				A2(author$project$Main$drawBackgroundLine, model.game, model.window.scale),
 				A2(author$project$Main$drawPlayer, model.player1, model.window.scale),
 				A2(author$project$Main$drawPlayer, model.player2, model.window.scale),
 				author$project$Main$drawBall(model.ball),
-				A2(author$project$Main$drawScore, model.score, model.window)
+				A3(author$project$Main$drawScore1, model.score, model.game, model.window.scale),
+				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale),
+				author$project$Main$drawState1(model.game.state)
 			]));
+};
+var elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
+var author$project$Main$blurScreen = F2(
+	function (game, scale) {
+		return A2(
+			elm$svg$Svg$rect,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(game.x1)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(game.y1)),
+					elm$svg$Svg$Attributes$rx(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$ry(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$width(
+					elm$core$String$fromFloat(game.x2 - game.x1)),
+					elm$svg$Svg$Attributes$height(
+					elm$core$String$fromFloat(game.y2 - game.y1)),
+					elm$svg$Svg$Attributes$fillOpacity('0.6')
+				]),
+			_List_Nil);
+	});
+var author$project$Main$drawGameOverBox = F2(
+	function (game, scale) {
+		var y1 = scale * (game.y1 + 100);
+		var width = scale * 360;
+		var middleWidth = game.x2 - game.x1;
+		var x1 = scale * (middleWidth - 180);
+		var height = scale * 300;
+		return A2(
+			elm$svg$Svg$rect,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(x1)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(y1)),
+					elm$svg$Svg$Attributes$rx(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$ry(
+					elm$core$String$fromFloat(10 * scale)),
+					elm$svg$Svg$Attributes$width(
+					elm$core$String$fromFloat(width)),
+					elm$svg$Svg$Attributes$height(
+					elm$core$String$fromFloat(height)),
+					elm$svg$Svg$Attributes$fillOpacity('0.8'),
+					elm$svg$Svg$Attributes$fill('gray')
+				]),
+			_List_Nil);
+	});
+var author$project$Main$drawGameOverMessage = F3(
+	function (game, score, scale) {
+		var winner = (_Utils_cmp(score.player1, score.player2) > 0) ? 'Player 1' : 'Player 2';
+		var middleWidth = game.x2 - game.x1;
+		var messagePosY = 200 * scale;
+		var message = winner + ' won the game!';
+		var fontSize = 30 * scale;
+		var messagePosX = middleWidth - ((fontSize / 2.4) * 11);
+		return A2(
+			elm$svg$Svg$text_,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$fontSize(
+					elm$core$String$fromFloat(fontSize)),
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(messagePosX)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(messagePosY)),
+					elm$svg$Svg$Attributes$fill('white')
+				]),
+			_List_fromArray(
+				[
+					elm$svg$Svg$text(message)
+				]));
+	});
+var author$project$Main$drawGameOver = function (model) {
+	return A2(
+		elm$svg$Svg$svg,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$width(
+				elm$core$String$fromFloat(model.window.width - (model.window.width / (10 * model.window.scale)))),
+				elm$svg$Svg$Attributes$height(
+				elm$core$String$fromFloat(model.window.height - (model.window.height / (5 * model.window.scale))))
+			]),
+		_List_fromArray(
+			[
+				author$project$Main$drawGame(model),
+				A2(author$project$Main$blurScreen, model.game, model.window.scale),
+				A2(author$project$Main$drawGameOverBox, model.game, model.window.scale),
+				A3(author$project$Main$drawGameOverMessage, model.game, model.score, model.window.scale)
+			]));
+};
+var author$project$Main$drawMenu = function (model) {
+	return A2(
+		elm$svg$Svg$svg,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$width(
+				elm$core$String$fromFloat(model.window.width - (model.window.width / (10 * model.window.scale)))),
+				elm$svg$Svg$Attributes$height(
+				elm$core$String$fromFloat(model.window.height - (model.window.height / (5 * model.window.scale))))
+			]),
+		_List_fromArray(
+			[
+				author$project$Main$drawState1(model.game.state)
+			]));
+};
+var author$project$Main$drawPause = function (model) {
+	return A2(
+		elm$svg$Svg$svg,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$width(
+				elm$core$String$fromFloat(model.window.width - (model.window.width / (10 * model.window.scale)))),
+				elm$svg$Svg$Attributes$height(
+				elm$core$String$fromFloat(model.window.height - (model.window.height / (5 * model.window.scale))))
+			]),
+		_List_fromArray(
+			[
+				author$project$Main$drawGame(model),
+				A2(author$project$Main$blurScreen, model.game, model.window.scale)
+			]));
+};
+var author$project$Main$drawWaiting = function (model) {
+	return A2(
+		elm$svg$Svg$svg,
+		_List_fromArray(
+			[
+				elm$svg$Svg$Attributes$width(
+				elm$core$String$fromFloat(model.window.width - (model.window.width / (10 * model.window.scale)))),
+				elm$svg$Svg$Attributes$height(
+				elm$core$String$fromFloat(model.window.height - (model.window.height / (5 * model.window.scale))))
+			]),
+		_List_fromArray(
+			[
+				A2(author$project$Main$drawBackground, model.game, model.window.scale),
+				A2(author$project$Main$drawBackgroundLine, model.game, model.window.scale),
+				A2(author$project$Main$drawPlayer, model.player1, model.window.scale),
+				A2(author$project$Main$drawPlayer, model.player2, model.window.scale),
+				author$project$Main$drawBall(model.ball),
+				A3(author$project$Main$drawScore1, model.score, model.game, model.window.scale),
+				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale),
+				author$project$Main$drawState1(model.game.state)
+			]));
+};
+var author$project$Main$view = function (model) {
+	return _Utils_eq(model.game.state, author$project$Main$Play) ? author$project$Main$drawGame(model) : (_Utils_eq(model.game.state, author$project$Main$Waiting) ? author$project$Main$drawWaiting(model) : (_Utils_eq(model.game.state, author$project$Main$Pause) ? author$project$Main$drawPause(model) : (_Utils_eq(model.game.state, author$project$Main$GameOver) ? author$project$Main$drawGameOver(model) : author$project$Main$drawMenu(model))));
 };
 var elm$browser$Browser$element = _Browser_element;
 var author$project$Main$main = elm$browser$Browser$element(
