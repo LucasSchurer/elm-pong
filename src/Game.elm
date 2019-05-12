@@ -81,7 +81,7 @@ type alias Model =
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
-        windowSettings = initWindowSettings 200 300
+        windowSettings = initWindowSettings 1200 700
         gameSettings = initGameSettings windowSettings.width windowSettings.height windowSettings.scale
 
         x1 = gameSettings.x1
