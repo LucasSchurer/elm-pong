@@ -19,6 +19,7 @@ git clone https://github.com/LucasSchurer/elm-pong.git
 ```
 Vá até o local onde o repositório foi baixado, executando os seguintes comandos:
 ```
+elm init
 elm install elm/svg
 elm install elm/json
 elm install elm/time

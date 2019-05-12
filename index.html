@@ -4464,12 +4464,21 @@ var author$project$Main$GameSettings = F6(
 	function (x1, y1, x2, y2, state, fps) {
 		return {fps: fps, state: state, x1: x1, x2: x2, y1: y1, y2: y2};
 	});
-var author$project$Main$Play = {$: 'Play'};
+var author$project$Main$Waiting = {$: 'Waiting'};
 var elm$core$Basics$add = _Basics_add;
+var elm$core$Basics$round = _Basics_round;
 var elm$core$Basics$sub = _Basics_sub;
+var elm$core$Basics$toFloat = _Basics_toFloat;
 var author$project$Main$initGameSettings = F3(
 	function (width, height, scale) {
-		return A6(author$project$Main$GameSettings, (width / 2) - (width / 4), 0, (width / 2) + (width / 4), height / 2, author$project$Main$Play, 120);
+		return A6(
+			author$project$Main$GameSettings,
+			(width / 2) - (width / 4),
+			0,
+			(width / 2) + (width / 4),
+			height / 2,
+			author$project$Main$Waiting,
+			elm$core$Basics$round(120 * scale));
 	});
 var author$project$Main$Player = F6(
 	function (x, y, width, height, speed, direction) {
@@ -4511,7 +4520,6 @@ var elm$core$Basics$logBase = F2(
 	function (base, number) {
 		return _Basics_log(number) / _Basics_log(base);
 	});
-var elm$core$Basics$toFloat = _Basics_toFloat;
 var elm$core$Array$shiftStep = elm$core$Basics$ceiling(
 	A2(elm$core$Basics$logBase, 2, elm$core$Array$branchFactor));
 var elm$core$Elm$JsArray$empty = _JsArray_empty;
@@ -5905,7 +5913,10 @@ var author$project$Main$subscriptions = function (model) {
 				A2(elm$time$Time$every, 1000 / model.game.fps, author$project$Main$Tick)
 			]));
 };
+var author$project$Main$GameOver = {$: 'GameOver'};
+var author$project$Main$Menu = {$: 'Menu'};
 var author$project$Main$Pause = {$: 'Pause'};
+var author$project$Main$Play = {$: 'Play'};
 var author$project$Main$changeState = F2(
 	function (state, game) {
 		return _Utils_update(
@@ -5918,8 +5929,6 @@ var author$project$Main$updateDirection = F2(
 			player,
 			{direction: dir});
 	});
-var author$project$Main$Waiting = {$: 'Waiting'};
-var author$project$Main$GameOver = {$: 'GameOver'};
 var author$project$Main$checkGameOver = F2(
 	function (score, state) {
 		return ((score.player1 > 4) || (score.player2 > 4)) ? author$project$Main$GameOver : state;
@@ -6160,7 +6169,7 @@ var author$project$Main$update = F2(
 				var key = msg.a;
 				switch (key.$) {
 					case 'Space':
-						return _Utils_Tuple2(
+						return (_Utils_eq(model.game.state, author$project$Main$GameOver) || _Utils_eq(model.game.state, author$project$Main$Menu)) ? _Utils_Tuple2(model, elm$core$Platform$Cmd$none) : _Utils_Tuple2(
 							_Utils_update(
 								model,
 								{
@@ -6342,37 +6351,6 @@ var author$project$Main$drawScore2 = F3(
 					elm$core$String$fromInt(score.player2))
 				]));
 	});
-var author$project$Main$drawState = function (state) {
-	switch (state.$) {
-		case 'Play':
-			return 'Playing';
-		case 'Pause':
-			return 'Paused';
-		case 'Waiting':
-			return 'Waiting';
-		case 'Menu':
-			return 'Menu';
-		default:
-			return 'Game Over';
-	}
-};
-var elm$svg$Svg$Attributes$fontFamily = _VirtualDom_attribute('font-family');
-var author$project$Main$drawState1 = function (state) {
-	return A2(
-		elm$svg$Svg$text_,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$fontSize('30'),
-				elm$svg$Svg$Attributes$x('600'),
-				elm$svg$Svg$Attributes$y('800'),
-				elm$svg$Svg$Attributes$fontFamily('PressStart; src: ./src/PressStart.otf')
-			]),
-		_List_fromArray(
-			[
-				elm$svg$Svg$text(
-				author$project$Main$drawState(state))
-			]));
-};
 var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var author$project$Main$drawGame = function (model) {
 	return A2(
@@ -6392,8 +6370,7 @@ var author$project$Main$drawGame = function (model) {
 				A2(author$project$Main$drawPlayer, model.player2, model.window.scale),
 				author$project$Main$drawBall(model.ball),
 				A3(author$project$Main$drawScore1, model.score, model.game, model.window.scale),
-				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale),
-				author$project$Main$drawState1(model.game.state)
+				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale)
 			]));
 };
 var elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
@@ -6416,34 +6393,6 @@ var author$project$Main$blurScreen = F2(
 					elm$svg$Svg$Attributes$height(
 					elm$core$String$fromFloat(game.y2 - game.y1)),
 					elm$svg$Svg$Attributes$fillOpacity('0.6')
-				]),
-			_List_Nil);
-	});
-var author$project$Main$drawGameOverBox = F2(
-	function (game, scale) {
-		var y1 = scale * (game.y1 + 100);
-		var width = scale * 360;
-		var middleWidth = game.x2 - game.x1;
-		var x1 = scale * (middleWidth - 180);
-		var height = scale * 300;
-		return A2(
-			elm$svg$Svg$rect,
-			_List_fromArray(
-				[
-					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(x1)),
-					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(y1)),
-					elm$svg$Svg$Attributes$rx(
-					elm$core$String$fromFloat(10 * scale)),
-					elm$svg$Svg$Attributes$ry(
-					elm$core$String$fromFloat(10 * scale)),
-					elm$svg$Svg$Attributes$width(
-					elm$core$String$fromFloat(width)),
-					elm$svg$Svg$Attributes$height(
-					elm$core$String$fromFloat(height)),
-					elm$svg$Svg$Attributes$fillOpacity('0.8'),
-					elm$svg$Svg$Attributes$fill('gray')
 				]),
 			_List_Nil);
 	});
@@ -6486,25 +6435,123 @@ var author$project$Main$drawGameOver = function (model) {
 			[
 				author$project$Main$drawGame(model),
 				A2(author$project$Main$blurScreen, model.game, model.window.scale),
-				A2(author$project$Main$drawGameOverBox, model.game, model.window.scale),
 				A3(author$project$Main$drawGameOverMessage, model.game, model.score, model.window.scale)
 			]));
 };
 var author$project$Main$drawMenu = function (model) {
-	return A2(
-		elm$svg$Svg$svg,
-		_List_fromArray(
-			[
-				elm$svg$Svg$Attributes$width(
-				elm$core$String$fromFloat(model.window.width - (model.window.width / (10 * model.window.scale)))),
-				elm$svg$Svg$Attributes$height(
-				elm$core$String$fromFloat(model.window.height - (model.window.height / (5 * model.window.scale))))
-			]),
-		_List_fromArray(
-			[
-				author$project$Main$drawState1(model.game.state)
-			]));
+	return A2(elm$svg$Svg$svg, _List_Nil, _List_Nil);
 };
+var author$project$Main$drawControls = F2(
+	function (game, scale) {
+		var middleWidth = game.x2 - game.x1;
+		var message4PosX = game.x1;
+		var message4 = 'UpArrow/DownArrow to control player 2';
+		var message3PosX = game.x1;
+		var message3 = 'W/S to control player 1';
+		var message2PosX = game.x1;
+		var message2 = 'Space to release the ball';
+		var message1PosX = game.x1;
+		var message1 = 'P to pause and unpause';
+		var fontSize = 20 * scale;
+		var message1PosY = (game.y2 + (fontSize * 2)) * scale;
+		var message2PosY = (game.y2 + (fontSize * 4)) * scale;
+		var message3PosY = (game.y2 + (fontSize * 6)) * scale;
+		var message4PosY = (game.y2 + (fontSize * 8)) * scale;
+		return A2(
+			elm$svg$Svg$svg,
+			_List_Nil,
+			_List_fromArray(
+				[
+					A2(
+					elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fontSize(
+							elm$core$String$fromFloat(fontSize)),
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(message1PosX)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(message1PosY)),
+							elm$svg$Svg$Attributes$fill('black')
+						]),
+					_List_fromArray(
+						[
+							elm$svg$Svg$text(message1)
+						])),
+					A2(
+					elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fontSize(
+							elm$core$String$fromFloat(fontSize)),
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(message2PosX)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(message2PosY)),
+							elm$svg$Svg$Attributes$fill('black')
+						]),
+					_List_fromArray(
+						[
+							elm$svg$Svg$text(message2)
+						])),
+					A2(
+					elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fontSize(
+							elm$core$String$fromFloat(fontSize)),
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(message3PosX)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(message3PosY)),
+							elm$svg$Svg$Attributes$fill('black')
+						]),
+					_List_fromArray(
+						[
+							elm$svg$Svg$text(message3)
+						])),
+					A2(
+					elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fontSize(
+							elm$core$String$fromFloat(fontSize)),
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(message4PosX)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(message4PosY)),
+							elm$svg$Svg$Attributes$fill('black')
+						]),
+					_List_fromArray(
+						[
+							elm$svg$Svg$text(message4)
+						]))
+				]));
+	});
+var author$project$Main$drawPauseMessage = F2(
+	function (game, scale) {
+		var middleWidth = game.x2 - game.x1;
+		var messagePosY = 200 * scale;
+		var message = 'Paused';
+		var fontSize = 30 * scale;
+		var messagePosX = middleWidth - ((fontSize / 4.2) * 6);
+		return A2(
+			elm$svg$Svg$text_,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$fontSize(
+					elm$core$String$fromFloat(fontSize)),
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(messagePosX)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(messagePosY)),
+					elm$svg$Svg$Attributes$fill('white')
+				]),
+			_List_fromArray(
+				[
+					elm$svg$Svg$text(message)
+				]));
+	});
 var author$project$Main$drawPause = function (model) {
 	return A2(
 		elm$svg$Svg$svg,
@@ -6518,7 +6565,9 @@ var author$project$Main$drawPause = function (model) {
 		_List_fromArray(
 			[
 				author$project$Main$drawGame(model),
-				A2(author$project$Main$blurScreen, model.game, model.window.scale)
+				A2(author$project$Main$blurScreen, model.game, model.window.scale),
+				A2(author$project$Main$drawPauseMessage, model.game, model.window.scale),
+				A2(author$project$Main$drawControls, model.game, model.window.scale)
 			]));
 };
 var author$project$Main$drawWaiting = function (model) {
@@ -6540,7 +6589,7 @@ var author$project$Main$drawWaiting = function (model) {
 				author$project$Main$drawBall(model.ball),
 				A3(author$project$Main$drawScore1, model.score, model.game, model.window.scale),
 				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale),
-				author$project$Main$drawState1(model.game.state)
+				A2(author$project$Main$drawControls, model.game, model.window.scale)
 			]));
 };
 var author$project$Main$view = function (model) {

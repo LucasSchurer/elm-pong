@@ -1,9 +1,12 @@
 import Browser
 import Browser.Events
 import Json.Decode
+import Html
+import Html.Attributes
+import Html.Events
 import Svg
 import Svg.Attributes
-import Time 
+import Time
 
 -- Main
 main = 
@@ -15,6 +18,11 @@ main =
         }
 
 -- Model
+
+type alias Flags =
+    { width : Float
+    , height : Float
+    }
 
 type State 
     = Play
@@ -138,8 +146,8 @@ initGameSettings width height scale =
         0
         ( width / 2 + width / 4 )
         ( height / 2 )
-        Play
-        120
+        Waiting
+        ( toFloat ( round ( 120*scale ) ) )
 
 initWindowSettings : Float -> Float -> WindowSettings
 initWindowSettings width height =
@@ -213,10 +221,15 @@ update msg model =
         System key ->
             case key of
                 Space ->
-                    ( { model | game = changeState Play model.game } 
-                    , Cmd.none
-                    )
-                    
+                    if model.game.state == GameOver || model.game.state == Menu then
+                        ( model
+                        , Cmd.none
+                        )
+                    else
+                        ( { model | game = changeState Play model.game } 
+                        , Cmd.none
+                        )                    
+                        
                 Stop ->
                     if model.game.state == Play then
                         ( { model | game = changeState Pause model.game }
@@ -516,7 +529,7 @@ subscriptions model =
 
 -- View
 
-view : Model -> Svg.Svg Msg
+view : Model -> Html.Html Msg
 view model = 
     if model.game.state == Play then
         drawGame model
@@ -528,12 +541,12 @@ view model =
         drawPause model
 
     else if model.game.state == GameOver then
-        drawGameOver model
+        drawGameOver model 
 
     else 
         drawMenu model  
 
-drawGame : Model -> Svg.Svg Msg
+drawGame : Model -> Html.Html Msg
 drawGame model =
     Svg.svg
         [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
@@ -546,10 +559,9 @@ drawGame model =
         , drawBall model.ball
         , drawScore1 model.score model.game model.window.scale
         , drawScore2 model.score model.game model.window.scale
-        , drawState1 model.game.state
         ]
 
-drawBackground : GameSettings -> Float -> Svg.Svg Msg
+drawBackground : GameSettings -> Float -> Html.Html Msg
 drawBackground settings scale = 
     Svg.rect
         [ Svg.Attributes.x ( String.fromFloat settings.x1 ) 
@@ -560,7 +572,7 @@ drawBackground settings scale =
         , Svg.Attributes.height ( String.fromFloat ( settings.y2 - settings.y1 ) )
         ] []
 
-drawBackgroundLine : GameSettings -> Float -> Svg.Svg Msg
+drawBackgroundLine : GameSettings -> Float -> Html.Html Msg
 drawBackgroundLine settings scale =
     Svg.line
         [ Svg.Attributes.x1 ( String.fromFloat ( settings.x2 - settings.x1 ) )
@@ -571,7 +583,7 @@ drawBackgroundLine settings scale =
         , Svg.Attributes.strokeDasharray ( String.fromFloat ( 10 * scale ) ++ "," ++ String.fromFloat ( 4 * scale ) )
         ] []
 
-drawPlayer : Player -> Float -> Svg.Svg Msg
+drawPlayer : Player -> Float -> Html.Html Msg
 drawPlayer player scale =
     Svg.rect
         [ Svg.Attributes.x ( String.fromFloat player.x ) 
@@ -583,7 +595,7 @@ drawPlayer player scale =
         , Svg.Attributes.fill "white"
         ] []
 
-drawBall : Ball -> Svg.Svg Msg
+drawBall : Ball -> Html.Html Msg
 drawBall ball = 
     Svg.circle
         [ Svg.Attributes.cx ( String.fromFloat ball.x )
@@ -592,7 +604,7 @@ drawBall ball =
         , Svg.Attributes.fill "white"
         ] []
 
-drawScore1 : Score -> GameSettings -> Float -> Svg.Svg Msg
+drawScore1 : Score -> GameSettings -> Float -> Html.Html Msg
 drawScore1 score game scale =
     let
         fontSize = ( 50 * scale )
@@ -611,7 +623,7 @@ drawScore1 score game scale =
                 Svg.text ( String.fromInt score.player1 )
             ]
 
-drawScore2 : Score -> GameSettings -> Float -> Svg.Svg Msg
+drawScore2 : Score -> GameSettings -> Float -> Html.Html Msg
 drawScore2 score game scale =
     let
         fontSize = ( 50 * scale )
@@ -630,7 +642,7 @@ drawScore2 score game scale =
                 Svg.text ( String.fromInt score.player2 )
             ]
 
-drawWaiting : Model -> Svg.Svg Msg
+drawWaiting : Model -> Html.Html Msg
 drawWaiting model =
     Svg.svg
         [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
@@ -643,10 +655,10 @@ drawWaiting model =
         , drawBall model.ball
         , drawScore1 model.score model.game model.window.scale
         , drawScore2 model.score model.game model.window.scale
-        , drawState1 model.game.state
+        , drawControls model.game model.window.scale
         ]
 
-drawGameOver : Model -> Svg.Svg Msg
+drawGameOver : Model -> Html.Html Msg
 drawGameOver model =
     Svg.svg
         [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
@@ -654,11 +666,10 @@ drawGameOver model =
         ] 
         [ drawGame model
         , blurScreen model.game model.window.scale
-        , drawGameOverBox model.game model.window.scale
         , drawGameOverMessage model.game model.score model.window.scale
         ]
 
-drawGameOverMessage : GameSettings -> Score -> Float -> Svg.Svg Msg
+drawGameOverMessage : GameSettings -> Score -> Float -> Html.Html Msg
 drawGameOverMessage game score scale =
     let
         winner = 
@@ -685,29 +696,7 @@ drawGameOverMessage game score scale =
                 Svg.text message 
             ]
 
-drawGameOverBox : GameSettings -> Float -> Svg.Svg Msg
-drawGameOverBox game scale =
-    let 
-        middleWidth = game.x2 - game.x1
-        x1 = scale * ( middleWidth - 180 )
-        y1 = scale * ( game.y1 + 100 )
-        width = scale * 360
-        height = scale * 300
-
-    in    
-        Svg.rect
-            [ Svg.Attributes.x ( String.fromFloat x1 ) 
-            , Svg.Attributes.y ( String.fromFloat y1 )
-            , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
-            , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
-            , Svg.Attributes.width ( String.fromFloat width )
-            , Svg.Attributes.height ( String.fromFloat height )
-            , Svg.Attributes.fillOpacity "0.8"
-            , Svg.Attributes.fill "gray"
-            ] []
-
-
-blurScreen : GameSettings -> Float -> Svg.Svg Msg
+blurScreen : GameSettings -> Float -> Html.Html Msg
 blurScreen game scale =
     Svg.rect
         [ Svg.Attributes.x ( String.fromFloat game.x1 ) 
@@ -719,7 +708,7 @@ blurScreen game scale =
         , Svg.Attributes.fillOpacity "0.6"
         ] []
 
-drawPause : Model -> Svg.Svg Msg
+drawPause : Model -> Html.Html Msg
 drawPause model =
     Svg.svg
         [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
@@ -727,39 +716,94 @@ drawPause model =
         ] 
         [ drawGame model
         , blurScreen model.game model.window.scale
+        , drawPauseMessage model.game model.window.scale
+        , drawControls model.game model.window.scale
         ]
 
-drawMenu : Model -> Svg.Svg Msg
+drawPauseMessage : GameSettings -> Float -> Html.Html Msg
+drawPauseMessage game scale =
+    let
+        fontSize = 30 * scale
+        middleWidth = game.x2 - game.x1
+        message = "Paused"
+        messagePosX = middleWidth - fontSize/4.2 * 6
+        messagePosY = 200 * scale
+
+    in
+        Svg.text_ 
+            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+            , Svg.Attributes.x ( String.fromFloat messagePosX )
+            , Svg.Attributes.y ( String.fromFloat messagePosY )
+            , Svg.Attributes.fill "white"
+            ] 
+            [
+                Svg.text message 
+            ]    
+
+drawControls : GameSettings -> Float -> Html.Html Msg
+drawControls game scale =
+    let
+        fontSize = 20 * scale
+        middleWidth = game.x2 - game.x1
+        
+        message1 = "P to pause and unpause"
+        message1PosX = game.x1
+        message1PosY = ( game.y2 + fontSize*2 ) * scale
+
+        message2 = "Space to release the ball"
+        message2PosX = game.x1
+        message2PosY = ( game.y2 + fontSize*4 ) * scale
+
+        message3 = "W/S to control player 1"
+        message3PosX = game.x1
+        message3PosY = ( game.y2 + fontSize*6 ) * scale
+
+        message4 = "UpArrow/DownArrow to control player 2"
+        message4PosX = game.x1
+        message4PosY =  ( game.y2 + fontSize*8 ) * scale
+
+
+    in    
+        Svg.svg
+        [] 
+        [ Svg.text_ 
+            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+            , Svg.Attributes.x ( String.fromFloat message1PosX )
+            , Svg.Attributes.y ( String.fromFloat message1PosY )
+            , Svg.Attributes.fill "black"
+            ] 
+            [
+                Svg.text message1 
+            ]
+        , Svg.text_ 
+            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+            , Svg.Attributes.x ( String.fromFloat message2PosX )
+            , Svg.Attributes.y ( String.fromFloat message2PosY )
+            , Svg.Attributes.fill "black"
+            ] 
+            [
+                Svg.text message2 
+            ]
+        , Svg.text_ 
+            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+            , Svg.Attributes.x ( String.fromFloat message3PosX )
+            , Svg.Attributes.y ( String.fromFloat message3PosY )
+            , Svg.Attributes.fill "black"
+            ] 
+            [
+                Svg.text message3
+            ]
+        , Svg.text_ 
+            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+            , Svg.Attributes.x ( String.fromFloat message4PosX )
+            , Svg.Attributes.y ( String.fromFloat message4PosY )
+            , Svg.Attributes.fill "black"
+            ] 
+            [
+                Svg.text message4 
+            ]
+        ]    
+
+drawMenu : Model -> Html.Html Msg
 drawMenu model =
-    Svg.svg
-        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
-        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
-        ]
-        [ drawState1 model.game.state
-        ]
-
-drawState : State -> String
-drawState state =
-    case state of
-        Play ->
-            "Playing"
-        Pause ->
-            "Paused"
-        Waiting ->
-            "Waiting"
-        Menu ->
-            "Menu"
-        GameOver ->
-            "Game Over"
-
-drawState1 : State -> Svg.Svg Msg
-drawState1 state =
-    Svg.text_ 
-        [ Svg.Attributes.fontSize "30"
-        , Svg.Attributes.x "600"
-        , Svg.Attributes.y "800"
-        , Svg.Attributes.fontFamily "PressStart; src: ./src/PressStart.otf"
-        ] 
-        [
-            Svg.text ( drawState state )
-        ]
+    Svg.svg [][]
