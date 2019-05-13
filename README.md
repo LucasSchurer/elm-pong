@@ -27,6 +27,12 @@ elm make .\src\Game.elm
 ```
 Um arquivo chamado "index.html" será criado na pasta do jogo. Abra-o com seu navegador preferido (por favor seja o chrome) e comece a jogar :)
 
+## Observações
+O jogo disponível no site e o gerado seguindo os passos acima está na resolução de 1280x720. Para modificar a resolução do arquivo gerado, siga os seguintes passos:
+- Procure pela função `init : () -> ( Model, Cmd.none )`
+- Dentro do bloco `let`, mude a variável `windowSettings = initWindowSettings X Y`, substituindo X e Y pela resolução desejada.
+- No terminal, rode novamente o comando `elm make .\src\Game.elm`
+- Abra o arquivo gerado "index.html", agora com a resolução nova.
 
 ## Objetivo
 
