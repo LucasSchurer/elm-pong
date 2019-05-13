@@ -9,6 +9,7 @@ import Svg.Attributes
 import Time
 
 -- Main
+
 main = 
     Browser.element
         { init = init
@@ -18,11 +19,6 @@ main =
         }
 
 -- Model
-
-type alias Flags =
-    { width : Float
-    , height : Float
-    }
 
 type State 
     = Play
@@ -35,7 +31,6 @@ type alias WindowSettings =
     { width : Float
     , height : Float
     , scale : Float    
-    , focus : Bool
     }
 
 type alias GameSettings =
@@ -78,6 +73,7 @@ type alias Model =
     , window : WindowSettings
     }
 
+-- Initialize the game, setting the initial values for resolution, states, players, score and the ball.
 init : () -> ( Model, Cmd Msg )
 init _ =
     let
@@ -127,18 +123,22 @@ init _ =
         , Cmd.none
         )
 
+-- Set x, y, width and height of a player's paddle.
 initPlayer : Float -> Float -> Float -> Float -> Float -> Player
 initPlayer x y playerWidth playerHeight gameHeight = 
     Player x y playerWidth playerHeight ( gameHeight / ( playerHeight * 2 ) ) 0
 
+-- Set x, y and the radius of the ball. 
 initBall : Float -> Float -> Float -> Float -> Ball
 initBall x y ballRadius gameWidth =
     Ball x y ballRadius ( gameWidth / ( ballRadius * 30 ) ) 0
 
+-- Initialize the score as 0x0
 initScore : Score
 initScore =
     Score 0 0
 
+-- Initialize game settings, as the game's rectangle and the initial state (waiting).
 initGameSettings : Float -> Float -> Float -> GameSettings
 initGameSettings width height scale =
     GameSettings 
@@ -149,9 +149,10 @@ initGameSettings width height scale =
         Waiting
         ( toFloat ( round ( 120*scale ) ) )
 
+-- Initialize the window settings
 initWindowSettings : Float -> Float -> WindowSettings
 initWindowSettings width height =
-    WindowSettings width height ( ( width + height ) / ( 1920 + 1080 ) ) True
+    WindowSettings width height ( ( width + height ) / ( 1920 + 1080 ) )
 
 -- Update
 
@@ -171,6 +172,7 @@ type Msg
     | Player2 Key
     | System Key
 
+-- Update the game, receiving "events" from the Msg and taking an action.
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model = 
     case msg of
@@ -255,35 +257,47 @@ update msg model =
             ( updateGame model
             , Cmd.none 
             ) 
-    
-validMovement : GameSettings -> Player -> Bool
-validMovement game player =
-    let 
-        dir = String.fromInt ( player.direction )
 
-    in
-        case dir of
-            "1" ->
-                if ( ( player.y + player.speed + player.height ) > game.y2 ) then False else True
-            
-            "-1" ->
-                if ( player.y - player.speed < game.y1 ) then False else True
-            
-            _ ->
-                False
+-- Update all game elements.
+updateGame : Model -> Model
+updateGame model =
+    if ( model.game.state == Play || model.game.state == Waiting ) then
+        let
+            modelAux = updateBall model
+            player1 = 
+                if model.game.state == Play then
+                    updatePlayer modelAux.game model.player1 
+                
+                else
+                    modelAux.player1
 
-updatePlayer : GameSettings -> Player -> Player
-updatePlayer game player = 
-    if validMovement game player then 
-        { player | y = player.y + ( toFloat ( player.direction ) * player.speed ) }
-    
-    else 
-        player
+            player2 =
+                if model.game.state == Play then
+                    updatePlayer modelAux.game model.player2 
+                
+                else
+                    modelAux.player2
 
-updateDirection : Player -> Int -> Player
-updateDirection player dir =
-    { player | direction = dir }
+            score = modelAux.score
+            ball = modelAux.ball
+            game = modelAux.game
+            window = modelAux.window
 
+        in
+            Model 
+                player1
+                player2
+                ball
+                score
+                ( { game | state = checkGameOver score game.state } )
+                window
+    else
+        model
+
+{- Change the ball's position.
+ - Change the ball's direction if collides with a player.
+ - Change score if collides with the vertical sides of the game's rectangle.
+-}
 updateBall : Model -> Model
 updateBall model =
     let 
@@ -333,41 +347,38 @@ updateBall model =
                 else
                     model
 
-updateGame : Model -> Model
-updateGame model =
-    if ( model.game.state == Play || model.game.state == Waiting ) then
-        let
-            modelAux = updateBall model
-            player1 = 
-                if model.game.state == Play then
-                    updatePlayer modelAux.game model.player1 
-                
-                else
-                    modelAux.player1
+-- Change the player's position.
+updatePlayer : GameSettings -> Player -> Player
+updatePlayer game player = 
+    if validMovement game player then 
+        { player | y = player.y + ( toFloat ( player.direction ) * player.speed ) }
+    
+    else 
+        player
 
-            player2 =
-                if model.game.state == Play then
-                    updatePlayer modelAux.game model.player2 
-                
-                else
-                    modelAux.player2
+-- Check if the player's movement is inside of the game's rectangle.   
+validMovement : GameSettings -> Player -> Bool
+validMovement game player =
+    let 
+        dir = String.fromInt ( player.direction )
 
-            score = modelAux.score
-            ball = modelAux.ball
-            game = modelAux.game
-            window = modelAux.window
+    in
+        case dir of
+            "1" ->
+                if ( ( player.y + player.speed + player.height ) > game.y2 ) then False else True
+            
+            "-1" ->
+                if ( player.y - player.speed < game.y1 ) then False else True
+            
+            _ ->
+                False
 
-        in
-            Model 
-                player1
-                player2
-                ball
-                score
-                ( { game | state = checkGameOver score game.state } )
-                window
-    else
-        model
+-- Update the player's direction.
+updateDirection : Player -> Int -> Player
+updateDirection player dir =
+    { player | direction = dir }
 
+-- Check collision between the ball and a player's paddle.
 checkCollisionBallPlayer : Ball -> Player -> Bool
 checkCollisionBallPlayer ball player = 
     let 
@@ -390,6 +401,7 @@ checkCollisionBallPlayer ball player =
         else
             False
 
+-- Check collision between the ball and the game's rectangle sides.
 checkCollisionBallSides : Ball -> GameSettings -> Int
 checkCollisionBallSides ball game =
     if ( ( ball.x - ball.r ) <= game.x1 ) then 
@@ -403,18 +415,7 @@ checkCollisionBallSides ball game =
     else
         0
 
-addPointPlayer : Int -> Score -> Score
-addPointPlayer player score =
-    case player of
-        1 ->
-            { score | player1 = score.player1 + 1 }
-
-        2 ->
-            { score | player2 = score.player2 + 1 }
-
-        _ ->
-            score
-
+-- Change the ball's direction when collides with a paddle.
 changeBallDirection : Ball -> Player -> Ball
 changeBallDirection ball player =
     Ball 
@@ -433,11 +434,13 @@ calculateYSpeedChange ball player =
 
     in
         speed
-        
+
+-- Change the ball's direction when collides with a side.        
 changeBallDirectionSides : Ball -> Ball
 changeBallDirectionSides ball =
     moveBall { ball | speedy = negate ball.speedy }
 
+-- Update the ball's position.
 moveBall : Ball -> Ball
 moveBall ball = 
     Ball
@@ -447,6 +450,7 @@ moveBall ball =
         ball.speedx
         ball.speedy
 
+-- Reset the ball's position to the center of the game rectangle.
 resetBall : Ball -> GameSettings -> Ball
 resetBall ball game =
     let
@@ -455,10 +459,25 @@ resetBall ball game =
     in
     { ball | x = middleWidth, y = gameHeight / 2, speedx = negate ball.speedx, speedy = 0 }
 
+-- Add a point for the selected player.
+addPointPlayer : Int -> Score -> Score
+addPointPlayer player score =
+    case player of
+        1 ->
+            { score | player1 = score.player1 + 1 }
+
+        2 ->
+            { score | player2 = score.player2 + 1 }
+
+        _ ->
+            score
+
+-- Change game state.
 changeState : State -> GameSettings -> GameSettings
 changeState state game =
     { game | state = state }
 
+-- Check if any player has more than 5 points.
 checkGameOver : Score -> State -> State
 checkGameOver score state =
     if score.player1 > 4 || score.player2 > 4 then
@@ -529,10 +548,11 @@ subscriptions model =
 
 -- View
 
+-- Select what will be drawn given the state
 view : Model -> Html.Html Msg
 view model = 
     if model.game.state == Play then
-        drawGame model
+        drawPlay model
 
     else if model.game.state == Waiting then
         drawWaiting model
@@ -546,43 +566,84 @@ view model =
     else 
         drawMenu model  
 
-drawGame : Model -> Html.Html Msg
-drawGame model =
+-- States
+drawPlay : Model -> Html.Html Msg
+drawPlay model =
     Svg.svg
         [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
         , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
         ]
         [ drawBackground model.game model.window.scale
-        , drawBackgroundLine model.game model.window.scale
         , drawPlayer model.player1 model.window.scale
         , drawPlayer model.player2 model.window.scale
         , drawBall model.ball
-        , drawScore1 model.score model.game model.window.scale
-        , drawScore2 model.score model.game model.window.scale
+        , drawScore model.score model.game model.window.scale
         ]
 
+drawWaiting : Model -> Html.Html Msg
+drawWaiting model =
+    Svg.svg
+        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
+        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
+        ]
+        [ drawBackground model.game model.window.scale
+        , drawPlayer model.player1 model.window.scale
+        , drawPlayer model.player2 model.window.scale
+        , drawBall model.ball
+        , drawScore model.score model.game model.window.scale
+        , drawControls model.game model.window.scale
+        ]
+
+drawGameOver : Model -> Html.Html Msg
+drawGameOver model =
+    Svg.svg
+        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
+        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
+        ] 
+        [ drawPlay model
+        , blurScreen model.game model.window.scale
+        , drawGameOverMessage model.game model.score model.window.scale
+        ]
+
+drawPause : Model -> Html.Html Msg
+drawPause model =
+    Svg.svg
+        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
+        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
+        ] 
+        [ drawPlay model
+        , blurScreen model.game model.window.scale
+        , drawPauseMessage model.game model.window.scale
+        , drawControls model.game model.window.scale
+        ]
+
+drawMenu : Model -> Html.Html Msg
+drawMenu model =
+    Svg.svg [][]
+
+-- Game elements.
 drawBackground : GameSettings -> Float -> Html.Html Msg
 drawBackground settings scale = 
-    Svg.rect
-        [ Svg.Attributes.x ( String.fromFloat settings.x1 ) 
-        , Svg.Attributes.y ( String.fromFloat settings.y1 )
-        , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
-        , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
-        , Svg.Attributes.width ( String.fromFloat ( settings.x2 - settings.x1 ) )
-        , Svg.Attributes.height ( String.fromFloat ( settings.y2 - settings.y1 ) )
-        ] []
-
-drawBackgroundLine : GameSettings -> Float -> Html.Html Msg
-drawBackgroundLine settings scale =
-    Svg.line
-        [ Svg.Attributes.x1 ( String.fromFloat ( settings.x2 - settings.x1 ) )
-        , Svg.Attributes.y1 ( String.fromFloat settings.y1 )
-        , Svg.Attributes.x2 ( String.fromFloat ( settings.x2 - settings.x1 ) )
-        , Svg.Attributes.y2 ( String.fromFloat settings.y2 )
-        , Svg.Attributes.stroke "white"
-        , Svg.Attributes.strokeDasharray ( String.fromFloat ( 10 * scale ) ++ "," ++ String.fromFloat ( 4 * scale ) )
-        ] []
-
+    Svg.svg
+        []
+        [ Svg.rect 
+            [ Svg.Attributes.x ( String.fromFloat settings.x1 ) 
+            , Svg.Attributes.y ( String.fromFloat settings.y1 )
+            , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
+            , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
+            , Svg.Attributes.width ( String.fromFloat ( settings.x2 - settings.x1 ) )
+            , Svg.Attributes.height ( String.fromFloat ( settings.y2 - settings.y1 ) )
+            ] []
+        , Svg.line
+            [ Svg.Attributes.x1 ( String.fromFloat ( settings.x2 - settings.x1 ) )
+            , Svg.Attributes.y1 ( String.fromFloat settings.y1 )
+            , Svg.Attributes.x2 ( String.fromFloat ( settings.x2 - settings.x1 ) )
+            , Svg.Attributes.y2 ( String.fromFloat settings.y2 )
+            , Svg.Attributes.stroke "white"
+            , Svg.Attributes.strokeDasharray ( String.fromFloat ( 10 * scale ) ++ "," ++ String.fromFloat ( 4 * scale ) )
+            ] []          
+        ]
+        
 drawPlayer : Player -> Float -> Html.Html Msg
 drawPlayer player scale =
     Svg.rect
@@ -604,71 +665,38 @@ drawBall ball =
         , Svg.Attributes.fill "white"
         ] []
 
-drawScore1 : Score -> GameSettings -> Float -> Html.Html Msg
-drawScore1 score game scale =
+drawScore : Score -> GameSettings -> Float -> Html.Html Msg
+drawScore score game scale =
     let
         fontSize = ( 50 * scale )
         middleScreenX = game.x2 - game.x1
-        fontX = middleScreenX - fontSize
+        fontX1 = middleScreenX - fontSize
+        fontX2 = middleScreenX + ( fontSize/2 )
         fontY = game.y1 + fontSize
 
     in
-        Svg.text_ 
-            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
-            , Svg.Attributes.x ( String.fromFloat fontX )
-            , Svg.Attributes.y ( String.fromFloat fontY )
-            , Svg.Attributes.fill "white"
-            ] 
-            [
-                Svg.text ( String.fromInt score.player1 )
+        Svg.svg
+            []
+            [ Svg.text_ 
+                [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+                , Svg.Attributes.x ( String.fromFloat fontX1 )
+                , Svg.Attributes.y ( String.fromFloat fontY )
+                , Svg.Attributes.fill "white"
+                ] 
+                [ Svg.text ( String.fromInt score.player1 ) ]
+            
+            , Svg.text_ 
+                [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
+                , Svg.Attributes.x ( String.fromFloat fontX2 )
+                , Svg.Attributes.y ( String.fromFloat fontY )
+                , Svg.Attributes.fill "white"
+                ] 
+                [ Svg.text ( String.fromInt score.player2 ) ]
             ]
 
-drawScore2 : Score -> GameSettings -> Float -> Html.Html Msg
-drawScore2 score game scale =
-    let
-        fontSize = ( 50 * scale )
-        middleScreenX = game.x2 - game.x1
-        fontX = middleScreenX + ( fontSize/2 )
-        fontY = game.y1 + fontSize
+-- Aux
 
-    in
-        Svg.text_ 
-            [ Svg.Attributes.fontSize ( String.fromFloat fontSize )
-            , Svg.Attributes.x ( String.fromFloat fontX )
-            , Svg.Attributes.y ( String.fromFloat fontY )
-            , Svg.Attributes.fill "white"
-            ] 
-            [
-                Svg.text ( String.fromInt score.player2 )
-            ]
-
-drawWaiting : Model -> Html.Html Msg
-drawWaiting model =
-    Svg.svg
-        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
-        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
-        ]
-        [ drawBackground model.game model.window.scale
-        , drawBackgroundLine model.game model.window.scale
-        , drawPlayer model.player1 model.window.scale
-        , drawPlayer model.player2 model.window.scale
-        , drawBall model.ball
-        , drawScore1 model.score model.game model.window.scale
-        , drawScore2 model.score model.game model.window.scale
-        , drawControls model.game model.window.scale
-        ]
-
-drawGameOver : Model -> Html.Html Msg
-drawGameOver model =
-    Svg.svg
-        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
-        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
-        ] 
-        [ drawGame model
-        , blurScreen model.game model.window.scale
-        , drawGameOverMessage model.game model.score model.window.scale
-        ]
-
+-- Game Over message displayed when a player has 5 or more points.         
 drawGameOverMessage : GameSettings -> Score -> Float -> Html.Html Msg
 drawGameOverMessage game score scale =
     let
@@ -696,30 +724,7 @@ drawGameOverMessage game score scale =
                 Svg.text message 
             ]
 
-blurScreen : GameSettings -> Float -> Html.Html Msg
-blurScreen game scale =
-    Svg.rect
-        [ Svg.Attributes.x ( String.fromFloat game.x1 ) 
-        , Svg.Attributes.y ( String.fromFloat game.y1 )
-        , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
-        , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
-        , Svg.Attributes.width ( String.fromFloat ( game.x2 - game.x1 ) )
-        , Svg.Attributes.height ( String.fromFloat ( game.y2 - game.y1 ) )
-        , Svg.Attributes.fillOpacity "0.6"
-        ] []
-
-drawPause : Model -> Html.Html Msg
-drawPause model =
-    Svg.svg
-        [ Svg.Attributes.width ( String.fromFloat ( model.window.width - model.window.width / ( 10 * model.window.scale ) ) )
-        , Svg.Attributes.height ( String.fromFloat ( model.window.height - model.window.height / ( 5 * model.window.scale ) ) )
-        ] 
-        [ drawGame model
-        , blurScreen model.game model.window.scale
-        , drawPauseMessage model.game model.window.scale
-        , drawControls model.game model.window.scale
-        ]
-
+-- Message when the game is paused.
 drawPauseMessage : GameSettings -> Float -> Html.Html Msg
 drawPauseMessage game scale =
     let
@@ -740,6 +745,20 @@ drawPauseMessage game scale =
                 Svg.text message 
             ]    
 
+-- "Blur" the screen, creating a black rectangle with 0.8 opacity on all the game screen.
+blurScreen : GameSettings -> Float -> Html.Html Msg
+blurScreen game scale =
+    Svg.rect
+        [ Svg.Attributes.x ( String.fromFloat game.x1 ) 
+        , Svg.Attributes.y ( String.fromFloat game.y1 )
+        , Svg.Attributes.rx ( String.fromFloat ( 10 * scale ) )
+        , Svg.Attributes.ry ( String.fromFloat ( 10 * scale ) )
+        , Svg.Attributes.width ( String.fromFloat ( game.x2 - game.x1 ) )
+        , Svg.Attributes.height ( String.fromFloat ( game.y2 - game.y1 ) )
+        , Svg.Attributes.fillOpacity "0.6"
+        ] []
+
+-- Display the controls when the game is paused or waiting for the ball's release.
 drawControls : GameSettings -> Float -> Html.Html Msg
 drawControls game scale =
     let
@@ -804,6 +823,3 @@ drawControls game scale =
             ]
         ]    
 
-drawMenu : Model -> Html.Html Msg
-drawMenu model =
-    Svg.svg [][]

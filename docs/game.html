@@ -4493,16 +4493,16 @@ var author$project$Main$Score = F2(
 		return {player1: player1, player2: player2};
 	});
 var author$project$Main$initScore = A2(author$project$Main$Score, 0, 0);
-var author$project$Main$WindowSettings = F4(
-	function (width, height, scale, focus) {
-		return {focus: focus, height: height, scale: scale, width: width};
+var author$project$Main$WindowSettings = F3(
+	function (width, height, scale) {
+		return {height: height, scale: scale, width: width};
 	});
-var elm$core$Basics$True = {$: 'True'};
 var author$project$Main$initWindowSettings = F2(
 	function (width, height) {
-		return A4(author$project$Main$WindowSettings, width, height, (width + height) / (1920 + 1080), true);
+		return A3(author$project$Main$WindowSettings, width, height, (width + height) / (1920 + 1080));
 	});
 var elm$core$Basics$False = {$: 'False'};
+var elm$core$Basics$True = {$: 'True'};
 var elm$core$Result$isOk = function (result) {
 	if (result.$ === 'Ok') {
 		return true;
@@ -4894,7 +4894,7 @@ var elm$json$Json$Decode$errorToStringHelp = F2(
 var elm$core$Platform$Cmd$batch = _Platform_batch;
 var elm$core$Platform$Cmd$none = elm$core$Platform$Cmd$batch(_List_Nil);
 var author$project$Main$init = function (_n0) {
-	var windowSettings = A2(author$project$Main$initWindowSettings, 1200, 700);
+	var windowSettings = A2(author$project$Main$initWindowSettings, 1280, 720);
 	var score = author$project$Main$initScore;
 	var playerWidth = 20 * windowSettings.scale;
 	var playerHeight = 80 * windowSettings.scale;
@@ -6203,64 +6203,120 @@ var author$project$Main$update = F2(
 var elm$core$String$fromFloat = _String_fromNumber;
 var elm$svg$Svg$trustedNode = _VirtualDom_nodeNS('http://www.w3.org/2000/svg');
 var elm$svg$Svg$rect = elm$svg$Svg$trustedNode('rect');
+var elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
 var elm$svg$Svg$Attributes$height = _VirtualDom_attribute('height');
 var elm$svg$Svg$Attributes$rx = _VirtualDom_attribute('rx');
 var elm$svg$Svg$Attributes$ry = _VirtualDom_attribute('ry');
 var elm$svg$Svg$Attributes$width = _VirtualDom_attribute('width');
 var elm$svg$Svg$Attributes$x = _VirtualDom_attribute('x');
 var elm$svg$Svg$Attributes$y = _VirtualDom_attribute('y');
-var author$project$Main$drawBackground = F2(
-	function (settings, scale) {
+var author$project$Main$blurScreen = F2(
+	function (game, scale) {
 		return A2(
 			elm$svg$Svg$rect,
 			_List_fromArray(
 				[
 					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(settings.x1)),
+					elm$core$String$fromFloat(game.x1)),
 					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(settings.y1)),
+					elm$core$String$fromFloat(game.y1)),
 					elm$svg$Svg$Attributes$rx(
 					elm$core$String$fromFloat(10 * scale)),
 					elm$svg$Svg$Attributes$ry(
 					elm$core$String$fromFloat(10 * scale)),
 					elm$svg$Svg$Attributes$width(
-					elm$core$String$fromFloat(settings.x2 - settings.x1)),
+					elm$core$String$fromFloat(game.x2 - game.x1)),
 					elm$svg$Svg$Attributes$height(
-					elm$core$String$fromFloat(settings.y2 - settings.y1))
+					elm$core$String$fromFloat(game.y2 - game.y1)),
+					elm$svg$Svg$Attributes$fillOpacity('0.6')
 				]),
 			_List_Nil);
 	});
+var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
+var elm$svg$Svg$text = elm$virtual_dom$VirtualDom$text;
+var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
+var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
+var elm$svg$Svg$Attributes$fontSize = _VirtualDom_attribute('font-size');
+var author$project$Main$drawGameOverMessage = F3(
+	function (game, score, scale) {
+		var winner = (_Utils_cmp(score.player1, score.player2) > 0) ? 'Player 1' : 'Player 2';
+		var middleWidth = game.x2 - game.x1;
+		var messagePosY = 200 * scale;
+		var message = winner + ' won the game!';
+		var fontSize = 30 * scale;
+		var messagePosX = middleWidth - ((fontSize / 2.4) * 11);
+		return A2(
+			elm$svg$Svg$text_,
+			_List_fromArray(
+				[
+					elm$svg$Svg$Attributes$fontSize(
+					elm$core$String$fromFloat(fontSize)),
+					elm$svg$Svg$Attributes$x(
+					elm$core$String$fromFloat(messagePosX)),
+					elm$svg$Svg$Attributes$y(
+					elm$core$String$fromFloat(messagePosY)),
+					elm$svg$Svg$Attributes$fill('white')
+				]),
+			_List_fromArray(
+				[
+					elm$svg$Svg$text(message)
+				]));
+	});
 var elm$svg$Svg$line = elm$svg$Svg$trustedNode('line');
+var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
 var elm$svg$Svg$Attributes$stroke = _VirtualDom_attribute('stroke');
 var elm$svg$Svg$Attributes$strokeDasharray = _VirtualDom_attribute('stroke-dasharray');
 var elm$svg$Svg$Attributes$x1 = _VirtualDom_attribute('x1');
 var elm$svg$Svg$Attributes$x2 = _VirtualDom_attribute('x2');
 var elm$svg$Svg$Attributes$y1 = _VirtualDom_attribute('y1');
 var elm$svg$Svg$Attributes$y2 = _VirtualDom_attribute('y2');
-var author$project$Main$drawBackgroundLine = F2(
+var author$project$Main$drawBackground = F2(
 	function (settings, scale) {
 		return A2(
-			elm$svg$Svg$line,
+			elm$svg$Svg$svg,
+			_List_Nil,
 			_List_fromArray(
 				[
-					elm$svg$Svg$Attributes$x1(
-					elm$core$String$fromFloat(settings.x2 - settings.x1)),
-					elm$svg$Svg$Attributes$y1(
-					elm$core$String$fromFloat(settings.y1)),
-					elm$svg$Svg$Attributes$x2(
-					elm$core$String$fromFloat(settings.x2 - settings.x1)),
-					elm$svg$Svg$Attributes$y2(
-					elm$core$String$fromFloat(settings.y2)),
-					elm$svg$Svg$Attributes$stroke('white'),
-					elm$svg$Svg$Attributes$strokeDasharray(
-					elm$core$String$fromFloat(10 * scale) + (',' + elm$core$String$fromFloat(4 * scale)))
-				]),
-			_List_Nil);
+					A2(
+					elm$svg$Svg$rect,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(settings.x1)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(settings.y1)),
+							elm$svg$Svg$Attributes$rx(
+							elm$core$String$fromFloat(10 * scale)),
+							elm$svg$Svg$Attributes$ry(
+							elm$core$String$fromFloat(10 * scale)),
+							elm$svg$Svg$Attributes$width(
+							elm$core$String$fromFloat(settings.x2 - settings.x1)),
+							elm$svg$Svg$Attributes$height(
+							elm$core$String$fromFloat(settings.y2 - settings.y1))
+						]),
+					_List_Nil),
+					A2(
+					elm$svg$Svg$line,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$x1(
+							elm$core$String$fromFloat(settings.x2 - settings.x1)),
+							elm$svg$Svg$Attributes$y1(
+							elm$core$String$fromFloat(settings.y1)),
+							elm$svg$Svg$Attributes$x2(
+							elm$core$String$fromFloat(settings.x2 - settings.x1)),
+							elm$svg$Svg$Attributes$y2(
+							elm$core$String$fromFloat(settings.y2)),
+							elm$svg$Svg$Attributes$stroke('white'),
+							elm$svg$Svg$Attributes$strokeDasharray(
+							elm$core$String$fromFloat(10 * scale) + (',' + elm$core$String$fromFloat(4 * scale)))
+						]),
+					_List_Nil)
+				]));
 	});
 var elm$svg$Svg$circle = elm$svg$Svg$trustedNode('circle');
 var elm$svg$Svg$Attributes$cx = _VirtualDom_attribute('cx');
 var elm$svg$Svg$Attributes$cy = _VirtualDom_attribute('cy');
-var elm$svg$Svg$Attributes$fill = _VirtualDom_attribute('fill');
 var elm$svg$Svg$Attributes$r = _VirtualDom_attribute('r');
 var author$project$Main$drawBall = function (ball) {
 	return A2(
@@ -6299,60 +6355,55 @@ var author$project$Main$drawPlayer = F2(
 				]),
 			_List_Nil);
 	});
-var elm$virtual_dom$VirtualDom$text = _VirtualDom_text;
-var elm$svg$Svg$text = elm$virtual_dom$VirtualDom$text;
-var elm$svg$Svg$text_ = elm$svg$Svg$trustedNode('text');
-var elm$svg$Svg$Attributes$fontSize = _VirtualDom_attribute('font-size');
-var author$project$Main$drawScore1 = F3(
+var author$project$Main$drawScore = F3(
 	function (score, game, scale) {
 		var middleScreenX = game.x2 - game.x1;
 		var fontSize = 50 * scale;
-		var fontX = middleScreenX - fontSize;
+		var fontX1 = middleScreenX - fontSize;
+		var fontX2 = middleScreenX + (fontSize / 2);
 		var fontY = game.y1 + fontSize;
 		return A2(
-			elm$svg$Svg$text_,
+			elm$svg$Svg$svg,
+			_List_Nil,
 			_List_fromArray(
 				[
-					elm$svg$Svg$Attributes$fontSize(
-					elm$core$String$fromFloat(fontSize)),
-					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(fontX)),
-					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(fontY)),
-					elm$svg$Svg$Attributes$fill('white')
-				]),
-			_List_fromArray(
-				[
-					elm$svg$Svg$text(
-					elm$core$String$fromInt(score.player1))
+					A2(
+					elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fontSize(
+							elm$core$String$fromFloat(fontSize)),
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(fontX1)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(fontY)),
+							elm$svg$Svg$Attributes$fill('white')
+						]),
+					_List_fromArray(
+						[
+							elm$svg$Svg$text(
+							elm$core$String$fromInt(score.player1))
+						])),
+					A2(
+					elm$svg$Svg$text_,
+					_List_fromArray(
+						[
+							elm$svg$Svg$Attributes$fontSize(
+							elm$core$String$fromFloat(fontSize)),
+							elm$svg$Svg$Attributes$x(
+							elm$core$String$fromFloat(fontX2)),
+							elm$svg$Svg$Attributes$y(
+							elm$core$String$fromFloat(fontY)),
+							elm$svg$Svg$Attributes$fill('white')
+						]),
+					_List_fromArray(
+						[
+							elm$svg$Svg$text(
+							elm$core$String$fromInt(score.player2))
+						]))
 				]));
 	});
-var author$project$Main$drawScore2 = F3(
-	function (score, game, scale) {
-		var middleScreenX = game.x2 - game.x1;
-		var fontSize = 50 * scale;
-		var fontX = middleScreenX + (fontSize / 2);
-		var fontY = game.y1 + fontSize;
-		return A2(
-			elm$svg$Svg$text_,
-			_List_fromArray(
-				[
-					elm$svg$Svg$Attributes$fontSize(
-					elm$core$String$fromFloat(fontSize)),
-					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(fontX)),
-					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(fontY)),
-					elm$svg$Svg$Attributes$fill('white')
-				]),
-			_List_fromArray(
-				[
-					elm$svg$Svg$text(
-					elm$core$String$fromInt(score.player2))
-				]));
-	});
-var elm$svg$Svg$svg = elm$svg$Svg$trustedNode('svg');
-var author$project$Main$drawGame = function (model) {
+var author$project$Main$drawPlay = function (model) {
 	return A2(
 		elm$svg$Svg$svg,
 		_List_fromArray(
@@ -6365,62 +6416,12 @@ var author$project$Main$drawGame = function (model) {
 		_List_fromArray(
 			[
 				A2(author$project$Main$drawBackground, model.game, model.window.scale),
-				A2(author$project$Main$drawBackgroundLine, model.game, model.window.scale),
 				A2(author$project$Main$drawPlayer, model.player1, model.window.scale),
 				A2(author$project$Main$drawPlayer, model.player2, model.window.scale),
 				author$project$Main$drawBall(model.ball),
-				A3(author$project$Main$drawScore1, model.score, model.game, model.window.scale),
-				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale)
+				A3(author$project$Main$drawScore, model.score, model.game, model.window.scale)
 			]));
 };
-var elm$svg$Svg$Attributes$fillOpacity = _VirtualDom_attribute('fill-opacity');
-var author$project$Main$blurScreen = F2(
-	function (game, scale) {
-		return A2(
-			elm$svg$Svg$rect,
-			_List_fromArray(
-				[
-					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(game.x1)),
-					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(game.y1)),
-					elm$svg$Svg$Attributes$rx(
-					elm$core$String$fromFloat(10 * scale)),
-					elm$svg$Svg$Attributes$ry(
-					elm$core$String$fromFloat(10 * scale)),
-					elm$svg$Svg$Attributes$width(
-					elm$core$String$fromFloat(game.x2 - game.x1)),
-					elm$svg$Svg$Attributes$height(
-					elm$core$String$fromFloat(game.y2 - game.y1)),
-					elm$svg$Svg$Attributes$fillOpacity('0.6')
-				]),
-			_List_Nil);
-	});
-var author$project$Main$drawGameOverMessage = F3(
-	function (game, score, scale) {
-		var winner = (_Utils_cmp(score.player1, score.player2) > 0) ? 'Player 1' : 'Player 2';
-		var middleWidth = game.x2 - game.x1;
-		var messagePosY = 200 * scale;
-		var message = winner + ' won the game!';
-		var fontSize = 30 * scale;
-		var messagePosX = middleWidth - ((fontSize / 2.4) * 11);
-		return A2(
-			elm$svg$Svg$text_,
-			_List_fromArray(
-				[
-					elm$svg$Svg$Attributes$fontSize(
-					elm$core$String$fromFloat(fontSize)),
-					elm$svg$Svg$Attributes$x(
-					elm$core$String$fromFloat(messagePosX)),
-					elm$svg$Svg$Attributes$y(
-					elm$core$String$fromFloat(messagePosY)),
-					elm$svg$Svg$Attributes$fill('white')
-				]),
-			_List_fromArray(
-				[
-					elm$svg$Svg$text(message)
-				]));
-	});
 var author$project$Main$drawGameOver = function (model) {
 	return A2(
 		elm$svg$Svg$svg,
@@ -6433,7 +6434,7 @@ var author$project$Main$drawGameOver = function (model) {
 			]),
 		_List_fromArray(
 			[
-				author$project$Main$drawGame(model),
+				author$project$Main$drawPlay(model),
 				A2(author$project$Main$blurScreen, model.game, model.window.scale),
 				A3(author$project$Main$drawGameOverMessage, model.game, model.score, model.window.scale)
 			]));
@@ -6564,7 +6565,7 @@ var author$project$Main$drawPause = function (model) {
 			]),
 		_List_fromArray(
 			[
-				author$project$Main$drawGame(model),
+				author$project$Main$drawPlay(model),
 				A2(author$project$Main$blurScreen, model.game, model.window.scale),
 				A2(author$project$Main$drawPauseMessage, model.game, model.window.scale),
 				A2(author$project$Main$drawControls, model.game, model.window.scale)
@@ -6583,17 +6584,15 @@ var author$project$Main$drawWaiting = function (model) {
 		_List_fromArray(
 			[
 				A2(author$project$Main$drawBackground, model.game, model.window.scale),
-				A2(author$project$Main$drawBackgroundLine, model.game, model.window.scale),
 				A2(author$project$Main$drawPlayer, model.player1, model.window.scale),
 				A2(author$project$Main$drawPlayer, model.player2, model.window.scale),
 				author$project$Main$drawBall(model.ball),
-				A3(author$project$Main$drawScore1, model.score, model.game, model.window.scale),
-				A3(author$project$Main$drawScore2, model.score, model.game, model.window.scale),
+				A3(author$project$Main$drawScore, model.score, model.game, model.window.scale),
 				A2(author$project$Main$drawControls, model.game, model.window.scale)
 			]));
 };
 var author$project$Main$view = function (model) {
-	return _Utils_eq(model.game.state, author$project$Main$Play) ? author$project$Main$drawGame(model) : (_Utils_eq(model.game.state, author$project$Main$Waiting) ? author$project$Main$drawWaiting(model) : (_Utils_eq(model.game.state, author$project$Main$Pause) ? author$project$Main$drawPause(model) : (_Utils_eq(model.game.state, author$project$Main$GameOver) ? author$project$Main$drawGameOver(model) : author$project$Main$drawMenu(model))));
+	return _Utils_eq(model.game.state, author$project$Main$Play) ? author$project$Main$drawPlay(model) : (_Utils_eq(model.game.state, author$project$Main$Waiting) ? author$project$Main$drawWaiting(model) : (_Utils_eq(model.game.state, author$project$Main$Pause) ? author$project$Main$drawPause(model) : (_Utils_eq(model.game.state, author$project$Main$GameOver) ? author$project$Main$drawGameOver(model) : author$project$Main$drawMenu(model))));
 };
 var elm$browser$Browser$element = _Browser_element;
 var author$project$Main$main = elm$browser$Browser$element(
